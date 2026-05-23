@@ -1,0 +1,441 @@
+import os
+import sys
+import math
+import shutil
+
+try:
+    import ansys.aedt.core as pyaedt
+except ImportError:
+    import pyaedt
+
+import pyedb
+from pyedb import Edb
+
+class EdbHelper:
+    def __init__(self, file_path, version="2025.1"):
+        self.file_path = file_path
+        self.version = version
+        self.edb_path = None
+        self.edb = None
+        self.temp_dir = None
+        
+        # Setup environment variable for Ansys
+        os.environ["ANSYSEM_ROOT251"] = r"C:\Program Files\ANSYS Inc\v251\AnsysEM"
+        
+        self.initialize_edb()
+
+    def initialize_edb(self):
+        """Initialize the EDB connection. Translates BRD files if necessary."""
+        ext = os.path.splitext(self.file_path)[1].lower()
+        if ext == ".brd":
+            # Translate BRD to AEDB
+            self.edb_path = self.file_path.replace(".brd", "_translated.aedb")
+            if os.path.exists(self.edb_path):
+                shutil.rmtree(self.edb_path, ignore_errors=True)
+            print(f"Translating {self.file_path} to EDB folder {self.edb_path}...")
+            self.edb = Edb(edbpath=self.file_path, version=self.version)
+            self.edb_path = self.edb.edbpath
+        elif ext == ".aedb":
+            self.edb_path = self.file_path
+            print(f"Opening EDB folder {self.edb_path}...")
+            self.edb = Edb(edbpath=self.file_path, version=self.version)
+        elif ext == ".aedt":
+            # For AEDT projects, EDB is usually inside project.aedt or we can open via pyaedt.
+            # We open the AEDT file using Edb class which can read EDB from AEDT designs.
+            self.edb_path = self.file_path
+            print(f"Opening EDB from AEDT project {self.file_path}...")
+            self.edb = Edb(edbpath=self.file_path, version=self.version)
+        else:
+            raise ValueError(f"Unsupported file format: {ext}. Must be .brd, .aedb, or .aedt.")
+
+    def get_nets(self):
+        """Get all net names in the design."""
+        if not self.edb:
+            return []
+        return sorted(list(self.edb.nets.nets.keys()))
+
+    def get_components(self):
+        """Get list of components with their metadata."""
+        if not self.edb:
+            return []
+        
+        comp_list = []
+        for name, comp in self.edb.components.instances.items():
+            nets = getattr(comp, 'nets', [])
+            comp_type = getattr(comp, 'type', 'Other')
+            numpins = getattr(comp, 'numpins', 0)
+            layer = getattr(comp, 'placement_layer', 'TOP')
+            
+            comp_list.append({
+                'name': name,
+                'type': comp_type,
+                'numpins': numpins,
+                'layer': layer,
+                'nets': nets
+            })
+        return sorted(comp_list, key=lambda x: x['name'])
+
+    def create_cutout(self, signal_nets, reference_nets, extent_type="ConvexHull", expansion_size=0.002, output_path=None):
+        """Create a layout cutout and save to a new AEDB folder."""
+        if not self.edb:
+            raise RuntimeError("EDB is not loaded.")
+        
+        if not output_path:
+            output_path = self.edb_path.replace(".aedb", "_cutout.aedb")
+            
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path, ignore_errors=True)
+            
+        print(f"Creating cutout ({extent_type}, {expansion_size*1000}mm margin)...")
+        # Run pyedb cutout
+        res = self.edb.cutout(
+            signal_nets=signal_nets,
+            reference_nets=reference_nets,
+            extent_type=extent_type,
+            expansion_size=expansion_size,
+            output_aedb_path=output_path,
+            open_cutout_at_end=False
+        )
+        print(f"Cutout created successfully at: {output_path}")
+        return output_path
+
+    def auto_setup_ports(self, signal_nets, reference_net="GND", port_mode="component_port"):
+        """
+        Auto configure ports for non-RLC termination points and RLC components.
+        - port_mode:
+          - "component_port": place circuit ports on non-RLC termination points, and also deactivate RLC components and replace them with component ports.
+        """
+        if not self.edb:
+            raise RuntimeError("EDB is not loaded.")
+            
+        # Get all GND pins in layout for distance calculation
+        gnd_pins = []
+        for name, comp in self.edb.components.instances.items():
+            for p_name, pin in comp.pins.items():
+                if pin.net_name.lower() == reference_net.lower():
+                    gnd_pins.append(pin)
+                    
+        print(f"Found {len(gnd_pins)} ground pins in design.")
+        created_ports = []
+        
+        # 1. Place ports on non-RLC termination points (ICs, Connectors, etc.)
+        print("\nConfiguring ports on non-RLC termination points...")
+        for comp_name, comp in self.edb.components.instances.items():
+            comp_type = getattr(comp, 'type', 'Other')
+            numpins = getattr(comp, 'numpins', 0)
+            
+            # Check if it is a non-RLC component (not Resistor, Capacitor, Inductor)
+            is_rlc = comp_type in ['Resistor', 'Capacitor', 'Inductor']
+            if is_rlc:
+                continue
+                
+            for pin_name, pin in comp.pins.items():
+                if pin.net_name in signal_nets:
+                    print(f"Found termination pin: {comp_name}.{pin_name} on net {pin.net_name}")
+                    # Find nearest GND pin on the same placement layer
+                    ref_pin = None
+                    if gnd_pins:
+                        same_layer_gnd = [gp for gp in gnd_pins if gp.placement_layer == pin.placement_layer]
+                        candidate_gnd_pins = same_layer_gnd if same_layer_gnd else gnd_pins
+                        
+                        min_dist = float('inf')
+                        sig_pos = pin.position
+                        for gp in candidate_gnd_pins:
+                            try:
+                                gp_pos = gp.position
+                                dist = math.hypot(gp_pos[0] - sig_pos[0], gp_pos[1] - sig_pos[1])
+                                if dist < min_dist:
+                                    min_dist = dist
+                                    ref_pin = gp
+                            except Exception as e:
+                                continue
+                                
+                    if ref_pin:
+                        port_name = f"Port_{comp_name}_{pin_name}"
+                        # Make sure port name is unique
+                        idx = 1
+                        orig_name = port_name
+                        while port_name in list(self.edb.excitations.keys()):
+                            port_name = f"{orig_name}_{idx}"
+                            idx += 1
+                            
+                        self.edb.excitation_manager.create_port_on_pins(
+                            refdes=comp_name,
+                            pins=pin,
+                            reference_pins=ref_pin,
+                            port_name=port_name
+                        )
+                        if port_name in list(self.edb.excitations.keys()):
+                            created_ports.append(port_name)
+                            print(f"Created termination port {port_name} referencing nearest GND pin {ref_pin.component_name}.{ref_pin.name} (layer: {ref_pin.placement_layer}, dist: {min_dist*1000:.3f} mm)")
+                    else:
+                        print(f"Warning: No ground reference found for termination pin {comp_name}.{pin_name}")
+
+        # 2. Configure RLC components (always replace them with component ports)
+        print("\nConfiguring component ports on RLC components...")
+        for comp_name, comp in self.edb.components.instances.items():
+            comp_type = getattr(comp, 'type', 'Other')
+            is_rlc = comp_type in ['Resistor', 'Capacitor', 'Inductor']
+            if not is_rlc:
+                continue
+                
+            comp_nets = getattr(comp, 'nets', [])
+            connected_signals = [n for n in comp_nets if n in signal_nets]
+            if not connected_signals:
+                continue
+                
+            pins = list(comp.pins.values())
+            if len(pins) != 2:
+                continue
+                
+            # Deactivate component and replace it with a port across its pins
+            res = self.edb.components.add_port_on_rlc_component(component=comp_name, circuit_ports=True)
+            if res:
+                created_ports.append(comp_name)
+                print(f"Created component port on RLC component {comp_name}")
+
+        # Save EDB changes
+        self.edb.save()
+        return created_ports
+
+    def setup_broadband_sweep(self, start_freq="0.5GHz", stop_freq="5GHz", step_freq="0.01GHz", setup_name="Setup1", sweep_name="Sweep1", non_graphical=True, solution_type="Broadband", max_passes=10, max_delta_s=0.02, low_freq="0.5GHz", high_freq="5GHz", single_freq="5GHz", multi_freqs="0.5,5,10", multi_deltas=""):
+        """Open design in PyAEDT HFSS 3D Layout and set up simulation and frequency sweep."""
+        if not self.edb_path:
+            raise RuntimeError("EDB path is not set.")
+            
+        print(f"Launching HFSS 3D Layout (non-graphical={non_graphical}) to configure frequency sweep...")
+        
+        # Close Edb connection first to release file lock
+        self.close()
+        
+        # Clean up stale .aedt and .aedt.lock files to avoid locks
+        aedt_file = self.edb_path.replace(".aedb", ".aedt")
+        aedt_lock = aedt_file + ".lock"
+        for f in [aedt_file, aedt_lock]:
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                    print(f"Removed stale file: {f}")
+                except Exception as e:
+                    print(f"Could not remove stale file {f}: {e}")
+        
+        try:
+            from ansys.aedt.core import Hfss3dLayout
+            
+            # Open project in HFSS 3D Layout
+            h3d = Hfss3dLayout(project=self.edb_path, version=self.version, non_graphical=non_graphical)
+            
+            # Check if setup exists, create if not
+            setup = None
+            for s in h3d.setups:
+                if s.name == setup_name:
+                    setup = s
+                    break
+            
+            if not setup:
+                setup = h3d.create_setup(name=setup_name)
+                print(f"Created setup: {setup_name}")
+            else:
+                print(f"Using existing setup: {setup_name}")
+                
+            # Configure adaptive settings based on solution_type
+            adaptive_settings = setup.props.get('AdaptiveSettings', {})
+            adaptive_settings['DoAdaptive'] = True
+            
+            if solution_type == "Single":
+                adaptive_settings['AdaptType'] = 'kSingle'
+                sf = single_freq if "Hz" in single_freq else f"{single_freq}GHz"
+                adaptive_settings['SingleFrequencyDataList'] = {
+                    'AdaptiveFrequencyData': [
+                        {
+                            'AdaptiveFrequency': sf,
+                            'MaxDelta': str(max_delta_s),
+                            'MaxPasses': int(max_passes),
+                            'Expressions': []
+                        }
+                    ]
+                }
+                print(f"Setting adaptive solution type to Single at {sf} (passes: {max_passes}, delta: {max_delta_s})")
+                
+            elif solution_type == "Multi-frequencies":
+                adaptive_settings['AdaptType'] = 'kMultiFrequencies'
+                freq_list = []
+                for val in multi_freqs.split(','):
+                    val = val.strip()
+                    if val:
+                        vf = val if "Hz" in val else f"{val}GHz"
+                        freq_list.append(vf)
+                if not freq_list:
+                    freq_list = ["0.5GHz", "5GHz", "10GHz"]
+                
+                # Parse per-frequency delta S values
+                delta_list = []
+                if multi_deltas:
+                    delta_list = [d.strip() for d in multi_deltas.split(',') if d.strip()]
+                
+                adaptive_settings['MultiFrequencyDataList'] = {
+                    'AdaptiveFrequencyData': [
+                        {
+                            'AdaptiveFrequency': freq,
+                            'MaxDelta': delta_list[i] if i < len(delta_list) else str(max_delta_s),
+                            'MaxPasses': int(max_passes),
+                            'Expressions': []
+                        } for i, freq in enumerate(freq_list)
+                    ]
+                }
+                print(f"Setting adaptive solution type to Multi-frequencies at {freq_list} (passes: {max_passes}, deltas: {delta_list if delta_list else max_delta_s})")
+                
+            else:  # Broadband (default)
+                adaptive_settings['AdaptType'] = 'kBroadBand'
+                lf = low_freq if "Hz" in low_freq else f"{low_freq}GHz"
+                hf = high_freq if "Hz" in high_freq else f"{high_freq}GHz"
+                adaptive_settings['BroadbandFrequencyDataList'] = {
+                    'AdaptiveFrequencyData': [
+                        {
+                            'AdaptiveFrequency': lf,
+                            'MaxDelta': str(max_delta_s),
+                            'MaxPasses': int(max_passes),
+                            'Expressions': []
+                        },
+                        {
+                            'AdaptiveFrequency': hf,
+                            'MaxDelta': str(max_delta_s),
+                            'MaxPasses': int(max_passes),
+                            'Expressions': []
+                        }
+                    ]
+                }
+                print(f"Setting adaptive solution type to Broadband at {lf}, {hf} (passes: {max_passes}, delta: {max_delta_s})")
+
+            setup.props['AdaptiveSettings'] = adaptive_settings
+            setup.update()
+            
+            # Create frequency sweep using LIN (Linear Step) format
+            sweep = setup.add_sweep(name=sweep_name, sweep_type="Interpolating")
+            sweep.props['Sweeps'] = {
+                'Variable': 'Freq',
+                'Data': f"LIN {start_freq} {stop_freq} {step_freq}",
+                'OffsetF1': False,
+                'Synchronize': 0
+            }
+            sweep.update()
+            print(f"Created/configured frequency sweep: {sweep_name} ({start_freq} to {stop_freq} step {step_freq})")
+            
+            h3d.save_project()
+            h3d.close_project()
+            print("Setup configuration completed and project saved.")
+            
+            # Re-initialize Edb connection
+            self.initialize_edb()
+            return True
+        except Exception as e:
+            print("Error configuring sweep via PyAEDT:")
+            import traceback
+            traceback.print_exc()
+            # Try to re-initialize Edb anyway
+            try:
+                self.initialize_edb()
+            except:
+                pass
+            return False
+
+    def run_analysis(self, setup_name="Setup1", num_cores=4, non_graphical=True):
+        """Open design in PyAEDT HFSS 3D Layout and run the EM simulation.
+        
+        This method is designed to be called from a background thread so the
+        GUI stays responsive during long-running simulations.
+        
+        Args:
+            setup_name: Name of the setup to analyze (default: Setup1).
+            num_cores: Number of CPU cores to use for simulation (default: 4).
+            non_graphical: If True, run Ansys in non-graphical mode (default: True).
+        
+        Returns:
+            True if analysis completed successfully, False otherwise.
+        """
+        if not self.edb_path:
+            raise RuntimeError("EDB path is not set.")
+        
+        # The AEDT project file should already exist after sweep setup
+        aedt_file = self.edb_path.replace(".aedb", ".aedt")
+        if not os.path.exists(aedt_file):
+            raise RuntimeError(
+                f"AEDT project file not found: {aedt_file}\n"
+                "Please run 'Apply Sweep Setup' first to create the AEDT project."
+            )
+        
+        print(f"Launching HFSS 3D Layout for EM analysis (non-graphical={non_graphical}, cores={num_cores})...")
+        
+        # Close Edb connection first to release file lock
+        self.close()
+        
+        # Remove stale lock file
+        aedt_lock = aedt_file + ".lock"
+        if os.path.exists(aedt_lock):
+            try:
+                os.remove(aedt_lock)
+                print(f"Removed stale lock file: {aedt_lock}")
+            except Exception as e:
+                print(f"Could not remove lock file {aedt_lock}: {e}")
+        
+        try:
+            from ansys.aedt.core import Hfss3dLayout
+            
+            # Open project in HFSS 3D Layout
+            h3d = Hfss3dLayout(project=aedt_file, version=self.version, non_graphical=non_graphical)
+            
+            # Verify the setup exists
+            setup_found = False
+            for s in h3d.setups:
+                if s.name == setup_name:
+                    setup_found = True
+                    break
+            
+            if not setup_found:
+                available = [s.name for s in h3d.setups]
+                h3d.close_project()
+                raise RuntimeError(
+                    f"Setup '{setup_name}' not found in the project.\n"
+                    f"Available setups: {available}"
+                )
+            
+            print(f"Starting EM analysis on setup '{setup_name}' with {num_cores} cores...")
+            print("This may take a significant amount of time depending on design complexity.")
+            print("=" * 60)
+            
+            # Run analysis - blocking=True so it completes before we continue.
+            # Since this runs inside a QThread, the GUI remains responsive.
+            h3d.analyze_setup(name=setup_name, cores=num_cores)
+            
+            print("=" * 60)
+            print(f"EM analysis on setup '{setup_name}' completed successfully!")
+            
+            h3d.save_project()
+            h3d.close_project()
+            print("Project saved and closed.")
+            
+            # Re-initialize Edb connection
+            self.initialize_edb()
+            return True
+            
+        except Exception as e:
+            print("Error during EM analysis:")
+            import traceback
+            traceback.print_exc()
+            # Try to re-initialize Edb anyway
+            try:
+                self.initialize_edb()
+            except:
+                pass
+            return False
+
+    def close(self):
+        """Close Edb connection."""
+        if self.edb:
+            try:
+                self.edb.close()
+                print("Edb connection closed.")
+            except:
+                pass
+            self.edb = None
+

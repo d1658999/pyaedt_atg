@@ -1,0 +1,11 @@
+/.venv
+/batch.log
+/G651-19063-03_TEST22.aedb
+/G651-19063-03_TEST22.brd
+/G651-19063-03_TEST22_cutout.aedb
+/G651-19063-03_TEST22_cutout.aedbstride
+/G651-19063-03_TEST22_cutout.aedt
+/G651-19063-03_TEST22_cutout.aedt.lock
+/G651-19063-03_TEST22_cutout.aedtresults
+/Translator.log
+/__pycache__
