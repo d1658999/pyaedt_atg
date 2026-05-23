@@ -462,7 +462,7 @@ class MainWindow(QMainWindow):
             <td><b>Auto-Setup Ports &amp; RLCs</b> &mdash; In the <i>3. Ports</i> tab, specify the ground reference net (default: <code>GND</code>) and click <i>Auto-Setup Ports &amp; RLCs</i>.<br/><br/>
             The tool automatically:<br/>
             &bull; Places excitation ports on non-RLC termination pins (ICs, connectors).<br/>
-            &bull; Matches ground reference pins on the <b>same placement layer</b> as the signal pin for accurate reference paths.<br/>
+            &bull; Selects the <b>best GND reference pin</b> using a priority order: <b>same component</b> first (for short, clean port paths), then same placement layer, then global fallback.<br/>
             &bull; Deactivates all RLC components on the signal path and replaces them with <b>component ports</b>.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 5</td>
             <td><b>Sweep &amp; Adaptive Solutions</b> &mdash; In the <i>4. Sweep</i> tab, configure frequency sweep range and choose one of three adaptive solution types:<br/><br/>

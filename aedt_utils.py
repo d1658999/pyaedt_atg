@@ -132,23 +132,60 @@ class EdbHelper:
             for pin_name, pin in comp.pins.items():
                 if pin.net_name in signal_nets:
                     print(f"Found termination pin: {comp_name}.{pin_name} on net {pin.net_name}")
-                    # Find nearest GND pin on the same placement layer
+                    # Find best GND reference pin using priority order:
+                    # 1st: GND pins within the SAME component (shortest, cleanest reference)
+                    # 2nd: GND pins on the same placement layer in the design
+                    # 3rd: Any GND pin in the design (fallback)
                     ref_pin = None
-                    if gnd_pins:
-                        same_layer_gnd = [gp for gp in gnd_pins if gp.placement_layer == pin.placement_layer]
-                        candidate_gnd_pins = same_layer_gnd if same_layer_gnd else gnd_pins
-                        
-                        min_dist = float('inf')
-                        sig_pos = pin.position
-                        for gp in candidate_gnd_pins:
+                    min_dist = float('inf')
+                    sig_pos = pin.position
+                    ref_source = ""
+                    
+                    # Priority 1: Same-component GND pins
+                    same_comp_gnd = [p for p in comp.pins.values()
+                                     if p.net_name.lower() == reference_net.lower() and p != pin]
+                    if same_comp_gnd:
+                        for gp in same_comp_gnd:
                             try:
                                 gp_pos = gp.position
                                 dist = math.hypot(gp_pos[0] - sig_pos[0], gp_pos[1] - sig_pos[1])
                                 if dist < min_dist:
                                     min_dist = dist
                                     ref_pin = gp
-                            except Exception as e:
+                            except Exception:
                                 continue
+                        if ref_pin:
+                            ref_source = "same-component"
+                    
+                    # Priority 2: Same-layer GND pins in the design
+                    if not ref_pin and gnd_pins:
+                        same_layer_gnd = [gp for gp in gnd_pins if gp.placement_layer == pin.placement_layer]
+                        if same_layer_gnd:
+                            for gp in same_layer_gnd:
+                                try:
+                                    gp_pos = gp.position
+                                    dist = math.hypot(gp_pos[0] - sig_pos[0], gp_pos[1] - sig_pos[1])
+                                    if dist < min_dist:
+                                        min_dist = dist
+                                        ref_pin = gp
+                                except Exception:
+                                    continue
+                            if ref_pin:
+                                ref_source = "same-layer"
+                    
+                    # Priority 3: Any GND pin (global fallback)
+                    if not ref_pin and gnd_pins:
+                        for gp in gnd_pins:
+                            try:
+                                gp_pos = gp.position
+                                dist = math.hypot(gp_pos[0] - sig_pos[0], gp_pos[1] - sig_pos[1])
+                                if dist < min_dist:
+                                    min_dist = dist
+                                    ref_pin = gp
+                            except Exception:
+                                continue
+                        if ref_pin:
+                            ref_source = "global-fallback"
                                 
                     if ref_pin:
                         port_name = f"Port_{comp_name}_{pin_name}"
@@ -167,7 +204,7 @@ class EdbHelper:
                         )
                         if port_name in list(self.edb.excitations.keys()):
                             created_ports.append(port_name)
-                            print(f"Created termination port {port_name} referencing nearest GND pin {ref_pin.component_name}.{ref_pin.name} (layer: {ref_pin.placement_layer}, dist: {min_dist*1000:.3f} mm)")
+                            print(f"Created termination port {port_name} referencing {ref_source} GND pin {ref_pin.component_name}.{ref_pin.name} (layer: {ref_pin.placement_layer}, dist: {min_dist*1000:.3f} mm)")
                     else:
                         print(f"Warning: No ground reference found for termination pin {comp_name}.{pin_name}")
 

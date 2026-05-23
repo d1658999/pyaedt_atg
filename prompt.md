@@ -52,4 +52,7 @@
 [x] When Creating Terminations ports, it MUST use the same layer Gnd as reference because I find out sometimes it will choose different layer even use GND which is far from other original wanted termination.
 [x] Adaptive Solutions: there are three types for There are three types for Solution Frequency: `Single`, `Multi-frequencies`, `Broadband`. I have the Ansys setting picture on it for those three types respectively. @Single.png, @multi-frequencies.png, @BraodBand.png. Please help modify or add them in `4. Sweep` tab. Default `Low frequency` is 0.5GHz and `High frequency` is 5GHz for `Broadband`.
 [x] Add `Analyze` button and its function. I can begin run the EM simulation if I check everything is fine. Remember not to make the tool be frozen when running a long time on it.
+[x] Termination port is too close other port like @term1.png, I hope you can change another way to be like @term2.png for termination port.
+[] Add a feature that import stackup file .xml to the board. This is optional function. We can insert this in `Analyze` tab.
+[] After finishing the EM analysis, export Matrix Data of Touchstone(.sNp) automatically
 [x] Update the `User Guide` tab and @README.md after modification or feautures added.

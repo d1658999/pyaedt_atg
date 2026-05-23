@@ -104,7 +104,10 @@ When you trigger **Auto-Setup Ports & RLCs**:
 
 1. **Non-RLC Termination Excitations**:
    - Places circuit ports directly on the connector and IC pins connected to active signal nets.
-   - Restricts search for nearest ground reference pins to the **same placement layer** (e.g. `TOP` layer signals map to `TOP` layer ground pins; `BOTTOM` signals map to `BOTTOM` ground pins).
+   - Selects the best ground reference pin using a **3-tier priority order**:
+     1. **Same component** — GND pins within the same component (e.g., a connector's own GND pin). This produces short, clean port references and avoids long diagonal lines crossing other components.
+     2. **Same placement layer** — GND pins on the same layer (e.g. `TOP` layer signals map to `TOP` layer ground pins).
+     3. **Global fallback** — Any GND pin in the design if no local match exists.
    - Generates non-clashing terminal/reference names (e.g. `Port_J10601_1` and `Port_J10601_1_ref`) to support multiple ports sharing the same physical reference pin without database conflicts.
 2. **RLC Replacement**:
    - All Resistors, Inductors, and Capacitors on the active signal path are deactivated in EDB and replaced with component ports across their layout footprint pads.
