@@ -53,6 +53,7 @@
 [x] Adaptive Solutions: there are three types for There are three types for Solution Frequency: `Single`, `Multi-frequencies`, `Broadband`. I have the Ansys setting picture on it for those three types respectively. @Single.png, @multi-frequencies.png, @BraodBand.png. Please help modify or add them in `4. Sweep` tab. Default `Low frequency` is 0.5GHz and `High frequency` is 5GHz for `Broadband`.
 [x] Add `Analyze` button and its function. I can begin run the EM simulation if I check everything is fine. Remember not to make the tool be frozen when running a long time on it.
 [x] Termination port is too close other port like @term1.png, I hope you can change another way to be like @term2.png for termination port.
-[] Add a feature that import stackup file .xml to the board. This is optional function. We can insert this in `Analyze` tab.
-[] After finishing the EM analysis, export Matrix Data of Touchstone(.sNp) automatically
+[x] Add a feature that import wanted stackup file .xml to the board like Ansys operation @stackup.png. This is optional function. We can insert this feature in `Cutout` tab. @ASK5_CLB_Cu_5E7_DIEL_FILL.xml as the sample for use and examination.
+[x] After finishing the EM analysis, export Matrix Data of Touchstone(.sNp) automatically
+[x] After Cutout with import @ASK5_CLB_Cu_5E7_DIEL_FILL.xml, Something is off becasue the part of material is empty like @stackup1.png. I try to import it manually, the material is right like @stackup2.png. Please fix it.
 [x] Update the `User Guide` tab and @README.md after modification or feautures added.

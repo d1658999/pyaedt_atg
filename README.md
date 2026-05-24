@@ -56,13 +56,19 @@ The GUI is divided into a **Control Panel** (left) and an **Interactive Browser*
 2. Use the search filter at the top (e.g. search for `ANT6` or `ANT7`) to quickly locate signal nets.
 3. Select one or more nets by clicking on them. Use `Ctrl` or `Shift` for multi-selection.
 
-### Step 3: Configure and Run Layout Cutout
+### Step 3: Configure Layout Cutout & Stackup
 1. Switch to the **2. Cutout** tab on the left.
-2. Set the **Cutout Type** (default is **Conforming**; options: `Conforming`, `ConvexHull`, `Bounding`).
-3. Set the **Expansion Size** in meters (default is **0.05** meters).
-4. Verify the output folder path (defaults to `[original_path]_cutout.aedb`).
-5. Click **Run Layout Cutout**.
-6. When complete, a prompt will ask if you want to automatically load this new cutout project. Click **Yes** to load it and configure ports.
+
+**Import Stackup (Optional)**:
+- Click **Browse** in the "Import Stackup" section to select a stackup `.xml` file.
+- Click **Import Stackup** to apply it. The tool automatically parses and registers all materials defined in the XML (such as dielectric properties for `DS-8502SQ`, `SOLDERMASK`, `AIR` and conductor properties for `copper - 5E7`) into the EDB design database before importing the stackup layers. The **Stackup Layers Viewer** below will automatically update to display all layers, types, materials, dielectric fill, and thicknesses in order, confirming a successful import.
+
+**Layout Cutout**:
+- Set the **Cutout Type** (default is **Conforming**; options: `Conforming`, `ConvexHull`, `Bounding`).
+- Set the **Expansion Size** in meters (default is **0.05** meters).
+- Verify the output folder path (defaults to `[original_path]_cutout.aedb`).
+- Click **Run Layout Cutout**.
+- When complete, a prompt will ask if you want to automatically load this new cutout project. Click **Yes** to load it and configure ports.
 
 ### Step 4: Auto-Setup Ports & RLCs
 1. Go to the **3. Ports** tab.
@@ -86,15 +92,20 @@ The GUI is divided into a **Control Panel** (left) and an **Interactive Browser*
 
 ### Step 6: Run EM Analysis
 1. Switch to the **5. Analyze** tab.
-2. Verify the **Setup Name** matches your configured setup (default: `Setup1`).
-3. Set the **CPU Cores** (default: `4`) for parallel processing.
-4. Check/uncheck **Run Non-Graphical Mode** as needed.
+
+**EM Analysis**:
+1. Verify the **Setup Name** (default: `Setup1`) and **Sweep Name** (default: `Sweep1`).
+2. Set the **CPU Cores** (default: `4`) for parallel processing.
+3. Check/uncheck **Run Non-Graphical Mode** as needed.
+4. Check **Export Touchstone (.sNp) after analysis** to automatically export S-parameter matrix data upon completion. Optionally specify a custom output path, or leave blank for auto-generated filename.
 5. Click **▶ Run EM Analysis**.
 6. A confirmation dialog will appear — click **Yes** to start.
    > [!NOTE]
    > The simulation runs in a background thread so the **GUI remains fully responsive**. Progress and solver output are streamed in real-time to the **Execution Log** panel. A status indicator on the Analyze tab shows whether the analysis is running, succeeded, or failed.
    > 
    > EM simulations can take anywhere from minutes to hours depending on design complexity and frequency resolution.
+   >
+   > If Touchstone export is enabled, the `.sNp` file will be saved automatically after the simulation completes. The file path is displayed in the status indicator and the Execution Log.
 
 ---
 

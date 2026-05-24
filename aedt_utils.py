@@ -376,7 +376,225 @@ class EdbHelper:
                 pass
             return False
 
-    def run_analysis(self, setup_name="Setup1", num_cores=4, non_graphical=True):
+    def import_stackup_xml(self, xml_path):
+        """Import a stackup definition from an XML file into the current EDB design.
+        
+        Args:
+            xml_path: Absolute path to the stackup XML file.
+        
+        Returns:
+            True if stackup was imported successfully, False otherwise.
+        """
+        if not self.edb:
+            raise RuntimeError("EDB is not loaded.")
+        
+        if not os.path.exists(xml_path):
+            raise FileNotFoundError(f"Stackup XML file not found: {xml_path}")
+        
+        print(f"Importing stackup from XML: {xml_path}")
+        try:
+            # Parse and import materials from XML first to ensure layer materials are defined
+            try:
+                import xml.etree.ElementTree as ET
+                tree = ET.parse(xml_path)
+                root = tree.getroot()
+                
+                # Helper to find tag ignoring namespace
+                def find_all_by_local_name(parent, local_name):
+                    elements = []
+                    for elem in parent.iter():
+                        tag = elem.tag
+                        if '}' in tag:
+                            tag = tag.split('}', 1)[1]
+                        if tag == local_name:
+                            elements.append(elem)
+                    return elements
+
+                materials_elements = find_all_by_local_name(root, "Material")
+                print(f"Found {len(materials_elements)} Material definitions in stackup XML. Registering...")
+                for mat_elem in materials_elements:
+                    name = mat_elem.get("Name")
+                    if not name:
+                        continue
+                    
+                    # Skip if already exists
+                    if name in self.edb.materials.materials:
+                        continue
+                    
+                    # Parse permittivity (default 1.0)
+                    permittivity = 1.0
+                    perm_elems = find_all_by_local_name(mat_elem, "Permittivity")
+                    if perm_elems:
+                        double_elems = find_all_by_local_name(perm_elems[0], "Double")
+                        if double_elems and double_elems[0].text:
+                            permittivity = float(double_elems[0].text)
+                            
+                    # Parse dielectric loss tangent (default 0.0)
+                    loss_tangent = 0.0
+                    lt_elems = find_all_by_local_name(mat_elem, "DielectricLossTangent")
+                    if lt_elems:
+                        double_elems = find_all_by_local_name(lt_elems[0], "Double")
+                        if double_elems and double_elems[0].text:
+                            loss_tangent = float(double_elems[0].text)
+                            
+                    # Parse conductivity (default None)
+                    conductivity = None
+                    cond_elems = find_all_by_local_name(mat_elem, "Conductivity")
+                    if cond_elems:
+                        double_elems = find_all_by_local_name(cond_elems[0], "Double")
+                        if double_elems and double_elems[0].text:
+                            conductivity = float(double_elems[0].text)
+                            
+                    if conductivity is not None:
+                        try:
+                            self.edb.materials.add_conductor_material(name, conductivity)
+                            print(f"  Added conductor material: {name} (conductivity={conductivity})")
+                        except Exception as e:
+                            print(f"  Error adding conductor material {name}: {e}")
+                    else:
+                        try:
+                            self.edb.materials.add_dielectric_material(name, permittivity, loss_tangent)
+                            print(f"  Added dielectric material: {name} (permittivity={permittivity}, loss_tangent={loss_tangent})")
+                        except Exception as e:
+                            print(f"  Error adding dielectric material {name}: {e}")
+            except Exception as e:
+                print(f"Error parsing/adding materials from XML: {e}")
+
+            # Now load the stackup XML
+            self.edb.stackup.load_from_xml(file_path=xml_path)
+            self.edb.save()
+            print("Stackup imported and EDB saved successfully.")
+            
+            # Print imported layer summary
+            layers = list(self.edb.stackup.layers.keys())
+            print(f"Stackup layers ({len(layers)}): {', '.join(layers)}")
+            return True
+        except Exception as e:
+            print(f"Error importing stackup XML:")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def get_stackup_info(self):
+        """Retrieve stackup layers details for display in the GUI.
+        
+        Returns:
+            list of dicts containing name, type, material, dielectric_fill, thickness
+        """
+        if not self.edb:
+            return []
+        
+        layers_info = []
+        try:
+            layer_objs = list(self.edb.stackup.layers.values())
+            # Sort by upper_elevation descending (TOP first, BOTTOM last)
+            try:
+                layer_objs.sort(key=lambda x: getattr(x, 'upper_elevation', 0), reverse=True)
+            except Exception:
+                pass
+            
+            for layer in layer_objs:
+                thickness = getattr(layer, 'thickness', 0.0)
+                if thickness < 1e-3:
+                    thickness_str = f"{thickness * 1e6:.2f} µm"
+                else:
+                    thickness_str = f"{thickness * 1e3:.4f} mm"
+                
+                # Get dielectric fill material if available
+                dielectric_fill = getattr(layer, 'dielectric_fill', '')
+                if dielectric_fill is None:
+                    dielectric_fill = ''
+                elif hasattr(dielectric_fill, 'name'):
+                    dielectric_fill = dielectric_fill.name
+                    
+                layers_info.append({
+                    "name": getattr(layer, 'name', 'Unknown'),
+                    "type": getattr(layer, 'type', 'Unknown'),
+                    "material": getattr(layer, 'material', 'Unknown'),
+                    "dielectric_fill": str(dielectric_fill),
+                    "thickness": thickness_str,
+                    "thickness_val": thickness
+                })
+        except Exception as e:
+            print(f"Error getting stackup info: {e}")
+            import traceback
+            traceback.print_exc()
+            
+        return layers_info
+
+    def export_touchstone(self, setup_name="Setup1", sweep_name="Sweep1",
+                          output_path="", non_graphical=True):
+        """Export Touchstone (.sNp) file from a completed simulation.
+        
+        Args:
+            setup_name: Name of the setup to export from.
+            sweep_name: Name of the sweep to export from.
+            output_path: Output file path. Auto-generated if empty.
+            non_graphical: If True, run in non-graphical mode.
+        
+        Returns:
+            Path to the exported Touchstone file, or None on failure.
+        """
+        aedt_file = self.edb_path.replace(".aedb", ".aedt")
+        if not os.path.exists(aedt_file):
+            print(f"AEDT project file not found: {aedt_file}")
+            return None
+        
+        # Close EDB to release file lock
+        self.close()
+        
+        try:
+            from ansys.aedt.core import Hfss3dLayout
+            
+            h3d = Hfss3dLayout(project=aedt_file, version=self.version,
+                               non_graphical=non_graphical)
+            
+            if not output_path:
+                project_dir = os.path.dirname(aedt_file)
+                project_name = os.path.splitext(os.path.basename(aedt_file))[0]
+                output_path = os.path.join(project_dir, f"{project_name}.sNp")
+            
+            print(f"Exporting Touchstone to: {output_path}")
+            
+            result = h3d.export_touchstone(
+                setup=setup_name,
+                sweep=sweep_name,
+                output_file=output_path
+            )
+            
+            h3d.save_project()
+            h3d.close_project()
+            
+            if result and os.path.exists(output_path):
+                print(f"Touchstone exported successfully: {output_path}")
+                self.initialize_edb()
+                return output_path
+            else:
+                # Try to find generated sNp file by pattern
+                project_dir = os.path.dirname(aedt_file)
+                for f in os.listdir(project_dir):
+                    if f.endswith('.sNp') or f.endswith('.s2p') or f.endswith('.s4p'):
+                        found_path = os.path.join(project_dir, f)
+                        print(f"Found exported Touchstone file: {found_path}")
+                        self.initialize_edb()
+                        return found_path
+                
+                print("Touchstone export completed but file not found at expected path.")
+                self.initialize_edb()
+                return None
+                
+        except Exception as e:
+            print("Error exporting Touchstone:")
+            import traceback
+            traceback.print_exc()
+            try:
+                self.initialize_edb()
+            except:
+                pass
+            return None
+
+    def run_analysis(self, setup_name="Setup1", sweep_name="Sweep1", num_cores=4,
+                     non_graphical=True, export_touchstone=False, export_path=""):
         """Open design in PyAEDT HFSS 3D Layout and run the EM simulation.
         
         This method is designed to be called from a background thread so the
@@ -384,11 +602,14 @@ class EdbHelper:
         
         Args:
             setup_name: Name of the setup to analyze (default: Setup1).
+            sweep_name: Name of the sweep for Touchstone export (default: Sweep1).
             num_cores: Number of CPU cores to use for simulation (default: 4).
             non_graphical: If True, run Ansys in non-graphical mode (default: True).
+            export_touchstone: If True, export Touchstone (.sNp) after analysis.
+            export_path: Output path for the Touchstone file. Auto-generated if empty.
         
         Returns:
-            True if analysis completed successfully, False otherwise.
+            dict with 'success' (bool) and optionally 'touchstone_path' (str).
         """
         if not self.edb_path:
             raise RuntimeError("EDB path is not set.")
@@ -415,6 +636,8 @@ class EdbHelper:
             except Exception as e:
                 print(f"Could not remove lock file {aedt_lock}: {e}")
         
+        result = {'success': False, 'touchstone_path': None}
+        
         try:
             from ansys.aedt.core import Hfss3dLayout
             
@@ -440,12 +663,34 @@ class EdbHelper:
             print("This may take a significant amount of time depending on design complexity.")
             print("=" * 60)
             
-            # Run analysis - blocking=True so it completes before we continue.
-            # Since this runs inside a QThread, the GUI remains responsive.
+            # Run analysis
             h3d.analyze_setup(name=setup_name, cores=num_cores)
             
             print("=" * 60)
             print(f"EM analysis on setup '{setup_name}' completed successfully!")
+            result['success'] = True
+            
+            # Auto-export Touchstone if requested
+            if export_touchstone:
+                print("\nExporting Touchstone (.sNp) file...")
+                if not export_path:
+                    project_dir = os.path.dirname(aedt_file)
+                    project_name = os.path.splitext(os.path.basename(aedt_file))[0]
+                    export_path = os.path.join(project_dir, f"{project_name}.sNp")
+                
+                try:
+                    ts_result = h3d.export_touchstone(
+                        setup=setup_name,
+                        sweep=sweep_name,
+                        output_file=export_path
+                    )
+                    if ts_result:
+                        print(f"Touchstone exported successfully: {export_path}")
+                        result['touchstone_path'] = export_path
+                    else:
+                        print("Touchstone export returned no result. Check output directory.")
+                except Exception as ts_e:
+                    print(f"Warning: Touchstone export failed: {ts_e}")
             
             h3d.save_project()
             h3d.close_project()
@@ -453,7 +698,7 @@ class EdbHelper:
             
             # Re-initialize Edb connection
             self.initialize_edb()
-            return True
+            return result
             
         except Exception as e:
             print("Error during EM analysis:")
@@ -464,7 +709,7 @@ class EdbHelper:
                 self.initialize_edb()
             except:
                 pass
-            return False
+            return result
 
     def close(self):
         """Close Edb connection."""

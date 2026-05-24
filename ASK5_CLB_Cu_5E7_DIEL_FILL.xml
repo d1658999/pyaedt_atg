@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<c:Control xmlns:c="http://www.ansys.com/control" schemaVersion="1.0">
+
+  <Stackup schemaVersion="1.0">
+    <Materials>
+      <Material Name="AIR">
+        <Permittivity>
+          <Double>1</Double>
+        </Permittivity>
+        <Permeability>
+          <Double>1</Double>
+        </Permeability>
+        <DielectricLossTangent>
+          <Double>0</Double>
+        </DielectricLossTangent>
+      </Material>
+      <Material Name="DS-8502SQ">
+        <Permittivity>
+          <Double>3.29</Double>
+        </Permittivity>
+        <Permeability>
+          <Double>1</Double>
+        </Permeability>
+        <DielectricLossTangent>
+          <Double>0.003</Double>
+        </DielectricLossTangent>
+        <MagneticLossTangent>
+          <Double>0</Double>
+        </MagneticLossTangent>
+      </Material>
+      <Material Name="SOLDERMASK">
+        <Permittivity>
+          <Double>3.29</Double>
+        </Permittivity>
+        <Permeability>
+          <Double>1</Double>
+        </Permeability>
+        <DielectricLossTangent>
+          <Double>0.022</Double>
+        </DielectricLossTangent>
+      </Material>
+      <Material Name="copper - 5E7">
+        <Permeability>
+          <Double>0.999991</Double>
+        </Permeability>
+        <Conductivity>
+          <Double>50000000</Double>
+        </Conductivity>
+        <ThermalConductivity>
+          <Double>400</Double>
+        </ThermalConductivity>
+        <SpecificHeat>
+          <Double>385</Double>
+        </SpecificHeat>
+        <ThermalExpansionCoefficient>
+          <Double>1.77e-05</Double>
+        </ThermalExpansionCoefficient>
+        <MassDensity>
+          <Double>8933</Double>
+        </MassDensity>
+        <YoungsModulus>
+          <Double>120000000000</Double>
+        </YoungsModulus>
+        <PoissonsRatio>
+          <Double>0.38</Double>
+        </PoissonsRatio>
+      </Material>
+    </Materials>
+    <Layers LengthUnit="mm">
+      <Layer Color="#44614c" Material="AIR" Name="UNNAMED_000" Thickness="0" Type="dielectric"/>
+      <Layer Color="#264a33" Material="SOLDERMASK" Name="UNNAMED_001" Thickness="0.0200000108" Type="dielectric"/>
+      <Layer Color="#09517b" FillMaterial="SOLDERMASK" Material="copper - 5E7" Name="TOP" Thickness="0.0230000048" Type="conductor"/>
+      <Layer Color="#1a291f" Material="DS-8502SQ" Name="UNNAMED_003" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#d198b1" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L2" Thickness="0.0149999954" Type="conductor"/>
+      <Layer Color="#44614c" Material="DS-8502SQ" Name="UNNAMED_005" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#553755" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L3" Thickness="0.0149999954" Type="conductor"/>
+      <Layer Color="#264a33" Material="DS-8502SQ" Name="UNNAMED_007" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#289889" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L4" Thickness="0.0149999954" Type="conductor"/>
+      <Layer Color="#1a291f" Material="DS-8502SQ" Name="UNNAMED_009" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#868feb" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L5" Thickness="0.0299999908" Type="conductor"/>
+      <Layer Color="#44614c" Material="DS-8502SQ" Name="UNNAMED_011" Thickness="0.060000007" Type="dielectric"/>
+      <Layer Color="#efa15d" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L6" Thickness="0.0299999908" Type="conductor"/>
+      <Layer Color="#264a33" Material="DS-8502SQ" Name="UNNAMED_013" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#f67fc1" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L7" Thickness="0.0149999954" Type="conductor"/>
+      <Layer Color="#1a291f" Material="DS-8502SQ" Name="UNNAMED_015" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#fd777a" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L8" Thickness="0.0149999954" Type="conductor"/>
+      <Layer Color="#44614c" Material="DS-8502SQ" Name="UNNAMED_017" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#8db7ca" FillMaterial="DS-8502SQ" Material="copper - 5E7" Name="L9" Thickness="0.0149999954" Type="conductor"/>
+      <Layer Color="#264a33" Material="DS-8502SQ" Name="UNNAMED_019" Thickness="0.0529999956" Type="dielectric"/>
+      <Layer Color="#5c4300" FillMaterial="SOLDERMASK" Material="copper - 5E7" Name="BOTTOM" Thickness="0.0230000048" Type="conductor"/>
+      <Layer Color="#1a291f" Material="SOLDERMASK" Name="UNNAMED_021" Thickness="0.0200000108" Type="dielectric"/>
+      <Layer Color="#44614c" Material="AIR" Name="UNNAMED_022" Thickness="0" Type="dielectric"/>
+      <Layer Color="#5e6f10" Name="Outline" Type="outline"/>
+    </Layers>
+  </Stackup>
+
+</c:Control>

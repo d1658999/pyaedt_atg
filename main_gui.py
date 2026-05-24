@@ -125,18 +125,30 @@ class WorkerThread(QThread):
                 )
                 self.finished_signal.emit({"success": res})
 
+            elif self.task_type == "import_stackup":
+                helper = self.task_args['helper']
+                xml_path = self.task_args['xml_path']
+                res = helper.import_stackup_xml(xml_path=xml_path)
+                self.finished_signal.emit({"success": res})
+
             elif self.task_type == "analyze":
                 helper = self.task_args['helper']
                 setup_name = self.task_args['setup_name']
+                sweep_name = self.task_args.get('sweep_name', 'Sweep1')
                 num_cores = self.task_args['num_cores']
                 non_graphical = self.task_args['non_graphical']
+                do_export = self.task_args.get('export_touchstone', False)
+                export_path = self.task_args.get('export_path', '')
 
                 res = helper.run_analysis(
                     setup_name=setup_name,
+                    sweep_name=sweep_name,
                     num_cores=num_cores,
-                    non_graphical=non_graphical
+                    non_graphical=non_graphical,
+                    export_touchstone=do_export,
+                    export_path=export_path
                 )
-                self.finished_signal.emit({"success": res})
+                self.finished_signal.emit(res)
 
         except Exception as e:
             err_msg = traceback.format_exc()
@@ -216,7 +228,29 @@ class MainWindow(QMainWindow):
 
         # Tab 2: Layout Cutout
         cutout_tab = QWidget()
-        cutout_layout = QFormLayout(cutout_tab)
+        cutout_tab_layout = QVBoxLayout(cutout_tab)
+        cutout_tab_layout.setContentsMargins(6, 6, 6, 6)
+        cutout_tab_layout.setSpacing(8)
+
+        # 2a. Import Stackup XML (Optional)
+        stackup_group = QGroupBox("Import Stackup (Optional)")
+        stackup_h_layout = QHBoxLayout(stackup_group)
+        self.stackup_path_edit = QLineEdit()
+        self.stackup_path_edit.setPlaceholderText("Select stackup .xml file...")
+        self.stackup_browse_btn = QPushButton("Browse")
+        self.stackup_browse_btn.setObjectName("browse_btn")
+        self.stackup_browse_btn.clicked.connect(self.browse_stackup_xml)
+        self.stackup_import_btn = QPushButton("Import Stackup")
+        self.stackup_import_btn.clicked.connect(self.run_import_stackup)
+        self.stackup_import_btn.setEnabled(False)
+        stackup_h_layout.addWidget(self.stackup_path_edit, 3)
+        stackup_h_layout.addWidget(self.stackup_browse_btn, 0)
+        stackup_h_layout.addWidget(self.stackup_import_btn, 0)
+        cutout_tab_layout.addWidget(stackup_group)
+
+        # 2b. Layout Cutout Settings
+        cutout_group = QGroupBox("Layout Cutout Settings")
+        cutout_layout = QFormLayout(cutout_group)
         
         self.extent_type_combo = QComboBox()
         self.extent_type_combo.addItems(["Conforming", "ConvexHull", "Bounding"])
@@ -235,6 +269,19 @@ class MainWindow(QMainWindow):
         cutout_layout.addRow("Expansion Size (m):", self.expansion_edit)
         cutout_layout.addRow("Output Path:", self.output_path_edit)
         cutout_layout.addRow(self.cutout_btn)
+        cutout_tab_layout.addWidget(cutout_group)
+
+        # 2c. Stackup Layers Viewer
+        stackup_view_group = QGroupBox("Stackup Layers Viewer")
+        stackup_view_layout = QVBoxLayout(stackup_view_group)
+        self.stackup_table = QTableWidget()
+        self.stackup_table.setColumnCount(5)
+        self.stackup_table.setHorizontalHeaderLabels(["Layer Name", "Type", "Material", "Dielectric Fill", "Thickness"])
+        self.stackup_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.stackup_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        stackup_view_layout.addWidget(self.stackup_table)
+        cutout_tab_layout.addWidget(stackup_view_group)
+
         self.control_tabs.addTab(cutout_tab, "2. Cutout")
 
         # Tab 3: Port Setup
@@ -360,10 +407,19 @@ class MainWindow(QMainWindow):
 
         # Tab 5: Analyze (Run EM Simulation)
         analyze_tab = QWidget()
-        analyze_layout = QFormLayout(analyze_tab)
+        analyze_main_layout = QVBoxLayout(analyze_tab)
+        analyze_main_layout.setContentsMargins(6, 6, 6, 6)
+        analyze_main_layout.setSpacing(8)
+
+        # --- Analysis Settings ---
+        analysis_group = QGroupBox("EM Analysis")
+        analyze_layout = QFormLayout(analysis_group)
 
         self.analyze_setup_edit = QLineEdit("Setup1")
         self.analyze_setup_edit.setPlaceholderText("Setup name to analyze...")
+
+        self.analyze_sweep_edit = QLineEdit("Sweep1")
+        self.analyze_sweep_edit.setPlaceholderText("Sweep name for Touchstone export...")
 
         self.num_cores_edit = QLineEdit("4")
         self.num_cores_edit.setPlaceholderText("Number of CPU cores...")
@@ -371,21 +427,36 @@ class MainWindow(QMainWindow):
         self.analyze_non_graphical_check = QCheckBox("Run Non-Graphical Mode")
         self.analyze_non_graphical_check.setChecked(True)
 
+        analyze_layout.addRow("Setup Name:", self.analyze_setup_edit)
+        analyze_layout.addRow("Sweep Name:", self.analyze_sweep_edit)
+        analyze_layout.addRow("CPU Cores:", self.num_cores_edit)
+        analyze_layout.addRow(self.analyze_non_graphical_check)
+        analyze_main_layout.addWidget(analysis_group)
+
+        # --- Touchstone Export ---
+        touchstone_group = QGroupBox("Touchstone Export")
+        ts_layout = QFormLayout(touchstone_group)
+        self.export_touchstone_check = QCheckBox("Export Touchstone (.sNp) after analysis")
+        self.export_touchstone_check.setChecked(True)
+        self.export_path_edit = QLineEdit()
+        self.export_path_edit.setPlaceholderText("Auto-generated if left blank")
+        ts_layout.addRow(self.export_touchstone_check)
+        ts_layout.addRow("Output Path:", self.export_path_edit)
+        analyze_main_layout.addWidget(touchstone_group)
+
         # Status label
         self.analyze_status_label = QLabel("")
         self.analyze_status_label.setWordWrap(True)
         self.analyze_status_label.setStyleSheet("color: #a0aec0; font-style: italic; padding: 4px;")
+        analyze_main_layout.addWidget(self.analyze_status_label)
 
         self.analyze_btn = QPushButton("▶  Run EM Analysis")
         self.analyze_btn.setObjectName("analyze_btn")
         self.analyze_btn.clicked.connect(self.run_analyze)
         self.analyze_btn.setEnabled(False)
+        analyze_main_layout.addWidget(self.analyze_btn)
 
-        analyze_layout.addRow("Setup Name:", self.analyze_setup_edit)
-        analyze_layout.addRow("CPU Cores:", self.num_cores_edit)
-        analyze_layout.addRow(self.analyze_non_graphical_check)
-        analyze_layout.addRow(self.analyze_status_label)
-        analyze_layout.addRow(self.analyze_btn)
+        analyze_main_layout.addStretch()
         self.control_tabs.addTab(analyze_tab, "5. Analyze")
 
         # Progress bar
@@ -457,7 +528,9 @@ class MainWindow(QMainWindow):
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 2</td>
             <td><b>Select Nets</b> &mdash; Use the <i>Nets Browser</i> on the right panel to search and select signal nets (e.g. <code>ANT6</code>, <code>ANT7</code>). Selected nets are shared across Cutout, Port, and Sweep steps.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 3</td>
-            <td><b>Layout Cutout</b> &mdash; In the <i>2. Cutout</i> tab, choose the cutout type (default: <b>Conforming</b>), set the expansion margin (default: <b>0.05 m</b>), and click <i>Run Layout Cutout</i>. A reduced EDB is created and you can auto-load it.</td></tr>
+            <td><b>Layout Cutout &amp; Stackup</b> &mdash; In the <i>2. Cutout</i> tab:<br/><br/>
+            &bull; <b>Import Stackup (Optional):</b> Click <i>Browse</i> to select a stackup <code>.xml</code> file and click <i>Import Stackup</i>. The tool automatically parses and registers all materials defined in the XML (such as <code>DS-8502SQ</code>, <code>SOLDERMASK</code>, <code>copper - 5E7</code>) into the EDB database, then loads the stackup layers. The <b>Stackup Layers Viewer</b> below will update to display all layers confirming successful import.<br/>
+            &bull; <b>Layout Cutout:</b> Choose the cutout type (default: <b>Conforming</b>), set the expansion margin (default: <b>0.05 m</b>), and click <i>Run Layout Cutout</i>. A reduced EDB is created and you can auto-load it.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 4</td>
             <td><b>Auto-Setup Ports &amp; RLCs</b> &mdash; In the <i>3. Ports</i> tab, specify the ground reference net (default: <code>GND</code>) and click <i>Auto-Setup Ports &amp; RLCs</i>.<br/><br/>
             The tool automatically:<br/>
@@ -471,8 +544,9 @@ class MainWindow(QMainWindow):
             <b>Multi-frequencies</b>: Use the table to add/remove multiple adaptive frequencies, each with its own max delta S value, plus a shared max passes setting.<br/><br/>
             Click <i>Apply Sweep Setup</i> to configure the HFSS 3D Layout simulation.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 6</td>
-            <td><b>Run EM Analysis</b> &mdash; In the <i>5. Analyze</i> tab, verify the setup name matches your configured setup (default: <code>Setup1</code>), set the number of CPU cores (default: <code>4</code>), and click <i>Run EM Analysis</i>.<br/><br/>
-            &bull; A confirmation dialog appears before the simulation starts.<br/>
+            <td><b>Run EM Analysis</b> &mdash; In the <i>5. Analyze</i> tab:<br/><br/>
+            <b>EM Analysis:</b> Set the setup name, sweep name, CPU cores, and click <i>Run EM Analysis</i>.<br/>
+            &bull; Check <b>Export Touchstone (.sNp)</b> to automatically export S-parameter matrix data after the simulation completes.<br/>
             &bull; The <b>GUI remains fully responsive</b> while the simulation runs in the background.<br/>
             &bull; Progress and results are reported in real-time in the <b>Execution Log</b> panel.<br/>
             &bull; Upon completion, a status indicator shows whether the analysis succeeded or failed.</td></tr>
@@ -801,6 +875,10 @@ class MainWindow(QMainWindow):
         self.ports_btn.setEnabled(True)
         self.sweep_btn.setEnabled(True)
         self.analyze_btn.setEnabled(True)
+        self.stackup_import_btn.setEnabled(True)
+
+        # Update stackup layers viewer
+        self.update_stackup_table()
 
         # Default cutout path suggestion
         self.output_path_edit.setText(self.helper.edb_path.replace(".aedb", "_cutout.aedb"))
@@ -813,6 +891,7 @@ class MainWindow(QMainWindow):
         self.ports_btn.setEnabled(self.helper is not None)
         self.sweep_btn.setEnabled(self.helper is not None)
         self.analyze_btn.setEnabled(self.helper is not None)
+        self.stackup_import_btn.setEnabled(self.helper is not None)
 
         self.append_log(f"\n[ERROR] Task Execution Failed:\n{error_trace}")
         QMessageBox.critical(self, "Error", f"An error occurred during execution. Please check the log console.")
@@ -1066,7 +1145,13 @@ class MainWindow(QMainWindow):
         if reply != QMessageBox.Yes:
             return
 
+        sweep_name = self.analyze_sweep_edit.text().strip() or "Sweep1"
+        do_export = self.export_touchstone_check.isChecked()
+        export_path = self.export_path_edit.text().strip()
+
         self.append_log(f"\n[ANALYZE] Starting EM analysis on setup '{setup_name}' with {num_cores} cores...")
+        if do_export:
+            self.append_log(f"[ANALYZE] Touchstone export enabled. Sweep: {sweep_name}")
         self.progress_bar.setVisible(True)
         self.analyze_btn.setEnabled(False)
         self.analyze_status_label.setText("⏳ EM simulation is running... GUI remains responsive.")
@@ -1076,8 +1161,11 @@ class MainWindow(QMainWindow):
         task_args = {
             'helper': self.helper,
             'setup_name': setup_name,
+            'sweep_name': sweep_name,
             'num_cores': num_cores,
-            'non_graphical': self.analyze_non_graphical_check.isChecked()
+            'non_graphical': self.analyze_non_graphical_check.isChecked(),
+            'export_touchstone': do_export,
+            'export_path': export_path
         }
 
         self.worker = WorkerThread("analyze", helper_args, task_args)
@@ -1090,17 +1178,98 @@ class MainWindow(QMainWindow):
         self.progress_bar.setVisible(False)
         self.analyze_btn.setEnabled(True)
 
-        success = data['success']
+        success = data.get('success', False)
+        touchstone_path = data.get('touchstone_path', None)
+
         if success:
-            self.analyze_status_label.setText("✅ EM analysis completed successfully!")
+            msg = "✅ EM analysis completed successfully!"
+            if touchstone_path:
+                msg += f"\n📁 Touchstone: {touchstone_path}"
+            self.analyze_status_label.setText(msg)
             self.analyze_status_label.setStyleSheet("color: #39ff14; font-weight: bold; padding: 4px;")
             self.append_log("[ANALYZE] EM analysis completed successfully!")
-            QMessageBox.information(self, "Analysis Complete", "EM simulation finished successfully!")
+            if touchstone_path:
+                self.append_log(f"[ANALYZE] Touchstone exported: {touchstone_path}")
+            QMessageBox.information(self, "Analysis Complete",
+                f"EM simulation finished successfully!" +
+                (f"\n\nTouchstone exported to:\n{touchstone_path}" if touchstone_path else ""))
         else:
             self.analyze_status_label.setText("❌ EM analysis failed. Check logs for details.")
             self.analyze_status_label.setStyleSheet("color: #f72585; font-weight: bold; padding: 4px;")
             self.append_log("[ANALYZE] EM analysis failed. Please check logs.")
             QMessageBox.critical(self, "Error", "EM analysis failed. Check logs for details.")
+
+    # --- Stackup Import ---
+    def browse_stackup_xml(self):
+        """Open file dialog to select a stackup XML file."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Stackup XML File", "",
+            "XML Files (*.xml);;All Files (*)"
+        )
+        if file_path:
+            self.stackup_path_edit.setText(file_path)
+
+    def run_import_stackup(self):
+        """Import a stackup XML file into the current EDB design."""
+        if not self.helper:
+            QMessageBox.warning(self, "Warning", "Please load a project first.")
+            return
+
+        xml_path = self.stackup_path_edit.text().strip()
+        if not xml_path:
+            QMessageBox.warning(self, "Warning", "Please select a stackup XML file.")
+            return
+
+        if not os.path.exists(xml_path):
+            QMessageBox.warning(self, "Warning", f"File not found: {xml_path}")
+            return
+
+        self.append_log(f"\n[STACKUP] Importing stackup from: {xml_path}")
+        self.progress_bar.setVisible(True)
+        self.stackup_import_btn.setEnabled(False)
+
+        helper_args = {'file_path': self.helper.file_path, 'version': self.helper.version}
+        task_args = {
+            'helper': self.helper,
+            'xml_path': xml_path
+        }
+
+        self.worker = WorkerThread("import_stackup", helper_args, task_args)
+        self.worker.finished_signal.connect(self.on_stackup_import_finished)
+        self.worker.error_signal.connect(self.on_worker_error)
+        self.worker.log_signal.connect(self.append_log)
+        self.worker.start()
+
+    def on_stackup_import_finished(self, data):
+        self.progress_bar.setVisible(False)
+        self.stackup_import_btn.setEnabled(True)
+
+        success = data['success']
+        if success:
+            self.append_log("[STACKUP] Stackup imported successfully!")
+            QMessageBox.information(self, "Stackup Import", "Stackup XML imported successfully into the design!")
+            self.update_stackup_table()
+        else:
+            self.append_log("[STACKUP] Stackup import failed. Check logs for details.")
+            QMessageBox.critical(self, "Error", "Stackup import failed. Check logs for details.")
+
+    def update_stackup_table(self):
+        """Update the stackup layers table in the Cutout tab."""
+        if not self.helper:
+            self.stackup_table.setRowCount(0)
+            return
+
+        try:
+            layers = self.helper.get_stackup_info()
+            self.stackup_table.setRowCount(len(layers))
+            for row, layer in enumerate(layers):
+                self.stackup_table.setItem(row, 0, QTableWidgetItem(layer['name']))
+                self.stackup_table.setItem(row, 1, QTableWidgetItem(layer['type']))
+                self.stackup_table.setItem(row, 2, QTableWidgetItem(layer['material']))
+                self.stackup_table.setItem(row, 3, QTableWidgetItem(layer['dielectric_fill']))
+                self.stackup_table.setItem(row, 4, QTableWidgetItem(layer['thickness']))
+        except Exception as e:
+            self.append_log(f"[STACKUP] Failed to update stackup view: {e}")
 
     def closeEvent(self, event):
         """Ensure that EDB connections are cleanly closed upon exit."""
