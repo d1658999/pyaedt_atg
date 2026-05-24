@@ -549,10 +549,27 @@ class EdbHelper:
             h3d = Hfss3dLayout(project=aedt_file, version=self.version,
                                non_graphical=non_graphical)
             
+            # Automatically detect how many ports exist in the simulation design
+            num_ports = 0
+            try:
+                if h3d.ports:
+                    num_ports = len(h3d.ports)
+                elif h3d.excitation_names:
+                    num_ports = len(h3d.excitation_names)
+            except Exception as e:
+                print(f"Warning: could not detect port count via h3d: {e}")
+                
+            ext = f".s{num_ports}p" if num_ports > 0 else ".sNp"
+            print(f"Detected {num_ports} ports. Using Touchstone extension: {ext}")
+            
             if not output_path:
                 project_dir = os.path.dirname(aedt_file)
                 project_name = os.path.splitext(os.path.basename(aedt_file))[0]
-                output_path = os.path.join(project_dir, f"{project_name}.sNp")
+                output_path = os.path.join(project_dir, f"{project_name}{ext}")
+            else:
+                base, orig_ext = os.path.splitext(output_path)
+                if orig_ext.lower().startswith('.s') and orig_ext.lower().endswith('p'):
+                    output_path = base + ext
             
             print(f"Exporting Touchstone to: {output_path}")
             
@@ -573,7 +590,8 @@ class EdbHelper:
                 # Try to find generated sNp file by pattern
                 project_dir = os.path.dirname(aedt_file)
                 for f in os.listdir(project_dir):
-                    if f.endswith('.sNp') or f.endswith('.s2p') or f.endswith('.s4p'):
+                    f_ext = os.path.splitext(f)[1].lower()
+                    if f_ext.startswith('.s') and f_ext.endswith('p'):
                         found_path = os.path.join(project_dir, f)
                         print(f"Found exported Touchstone file: {found_path}")
                         self.initialize_edb()
@@ -672,12 +690,29 @@ class EdbHelper:
             
             # Auto-export Touchstone if requested
             if export_touchstone:
-                print("\nExporting Touchstone (.sNp) file...")
+                # Automatically detect how many ports exist in the simulation design
+                num_ports = 0
+                try:
+                    if h3d.ports:
+                        num_ports = len(h3d.ports)
+                    elif h3d.excitation_names:
+                        num_ports = len(h3d.excitation_names)
+                except Exception as e:
+                    print(f"Warning: could not detect port count via h3d: {e}")
+                    
+                ext = f".s{num_ports}p" if num_ports > 0 else ".sNp"
+                print(f"Detected {num_ports} ports. Using Touchstone extension: {ext}")
+                
                 if not export_path:
                     project_dir = os.path.dirname(aedt_file)
                     project_name = os.path.splitext(os.path.basename(aedt_file))[0]
-                    export_path = os.path.join(project_dir, f"{project_name}.sNp")
+                    export_path = os.path.join(project_dir, f"{project_name}{ext}")
+                else:
+                    base, orig_ext = os.path.splitext(export_path)
+                    if orig_ext.lower().startswith('.s') and orig_ext.lower().endswith('p'):
+                        export_path = base + ext
                 
+                print(f"Exporting Touchstone to: {export_path}")
                 try:
                     ts_result = h3d.export_touchstone(
                         setup=setup_name,

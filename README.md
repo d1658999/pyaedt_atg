@@ -97,7 +97,7 @@ The GUI is divided into a **Control Panel** (left) and an **Interactive Browser*
 1. Verify the **Setup Name** (default: `Setup1`) and **Sweep Name** (default: `Sweep1`).
 2. Set the **CPU Cores** (default: `4`) for parallel processing.
 3. Check/uncheck **Run Non-Graphical Mode** as needed.
-4. Check **Export Touchstone (.sNp) after analysis** to automatically export S-parameter matrix data upon completion. Optionally specify a custom output path, or leave blank for auto-generated filename.
+4. Check **Export Touchstone (e.g. .s10p, .s16p) after analysis** to automatically export S-parameter matrix data upon completion. The tool automatically detects the number of simulation ports and uses the correct Touchstone extension (e.g., `.s10p` or `.s16p` for 10 and 16 ports, respectively). Optionally specify a custom output path, or leave blank for an auto-generated filename.
 5. Click **▶ Run EM Analysis**.
 6. A confirmation dialog will appear — click **Yes** to start.
    > [!NOTE]
@@ -105,7 +105,7 @@ The GUI is divided into a **Control Panel** (left) and an **Interactive Browser*
    > 
    > EM simulations can take anywhere from minutes to hours depending on design complexity and frequency resolution.
    >
-   > If Touchstone export is enabled, the `.sNp` file will be saved automatically after the simulation completes. The file path is displayed in the status indicator and the Execution Log.
+   > If Touchstone export is enabled, the `.sNp` file (with the extension resolved to the actual port count, e.g. `.s10p` or `.s16p`) will be saved automatically after the simulation completes. The file path is displayed in the status indicator and the Execution Log.
 
 ---
 

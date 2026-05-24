@@ -56,4 +56,5 @@
 [x] Add a feature that import wanted stackup file .xml to the board like Ansys operation @stackup.png. This is optional function. We can insert this feature in `Cutout` tab. @ASK5_CLB_Cu_5E7_DIEL_FILL.xml as the sample for use and examination.
 [x] After finishing the EM analysis, export Matrix Data of Touchstone(.sNp) automatically
 [x] After Cutout with import @ASK5_CLB_Cu_5E7_DIEL_FILL.xml, Something is off becasue the part of material is empty like @stackup1.png. I try to import it manually, the material is right like @stackup2.png. Please fix it.
+[x] Automatically detect how many port for the simulation, so it can use the right snp port file such as .s10p s16p for 10 and 16 ports respectively, not hard extended file name .sNp file. 
 [x] Update the `User Guide` tab and @README.md after modification or feautures added.

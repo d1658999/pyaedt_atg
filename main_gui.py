@@ -436,10 +436,10 @@ class MainWindow(QMainWindow):
         # --- Touchstone Export ---
         touchstone_group = QGroupBox("Touchstone Export")
         ts_layout = QFormLayout(touchstone_group)
-        self.export_touchstone_check = QCheckBox("Export Touchstone (.sNp) after analysis")
+        self.export_touchstone_check = QCheckBox("Export Touchstone (e.g. .s10p, .s16p) after analysis")
         self.export_touchstone_check.setChecked(True)
         self.export_path_edit = QLineEdit()
-        self.export_path_edit.setPlaceholderText("Auto-generated if left blank")
+        self.export_path_edit.setPlaceholderText("Auto-generated suffix based on port count (e.g. .s10p) if left blank")
         ts_layout.addRow(self.export_touchstone_check)
         ts_layout.addRow("Output Path:", self.export_path_edit)
         analyze_main_layout.addWidget(touchstone_group)
@@ -546,7 +546,7 @@ class MainWindow(QMainWindow):
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 6</td>
             <td><b>Run EM Analysis</b> &mdash; In the <i>5. Analyze</i> tab:<br/><br/>
             <b>EM Analysis:</b> Set the setup name, sweep name, CPU cores, and click <i>Run EM Analysis</i>.<br/>
-            &bull; Check <b>Export Touchstone (.sNp)</b> to automatically export S-parameter matrix data after the simulation completes.<br/>
+            &bull; Check <b>Export Touchstone (e.g. .s10p, .s16p)</b> to automatically export S-parameter matrix data after the simulation completes. The tool will auto-detect the number of ports in the design and set the appropriate Touchstone extension (e.g. <code>.s10p</code> or <code>.s16p</code>).<br/>
             &bull; The <b>GUI remains fully responsive</b> while the simulation runs in the background.<br/>
             &bull; Progress and results are reported in real-time in the <b>Execution Log</b> panel.<br/>
             &bull; Upon completion, a status indicator shows whether the analysis succeeded or failed.</td></tr>
