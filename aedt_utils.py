@@ -81,7 +81,7 @@ class EdbHelper:
             signal_nets: List of signal net names.
             reference_nets: List of reference net names.
             extent_type: Cutout type (Conforming, ConvexHull, Bounding).
-            expansion_size: Expansion size ratio for Conforming (default: 0.1) or millimeters for ConvexHull/Bounding.
+            expansion_size: Expansion factor (default: 0.1, representing 10%).
             output_path: Path to save the cutout AEDB.
         """
         if not self.edb:
@@ -93,30 +93,17 @@ class EdbHelper:
         if os.path.exists(output_path):
             shutil.rmtree(output_path, ignore_errors=True)
             
-        if extent_type == "Conforming":
-            print(f"Creating cutout ({extent_type}, expansion factor {expansion_size})...")
-            from pyedb.workflows.utilities.cutout import Cutout
-            cutout = Cutout(self.edb)
-            cutout.signals = signal_nets
-            cutout.references = reference_nets
-            cutout.extent_type = extent_type
-            cutout.expansion_factor = expansion_size
-            cutout.smart_cutout = True
-            cutout.output_file = output_path
-            cutout.open_cutout_at_end = False
-            res = cutout.run()
-        else:
-            print(f"Creating cutout ({extent_type}, {expansion_size}mm margin)...")
-            # Convert expansion_size from mm to meters for PyEDB
-            expansion_val = expansion_size * 0.001
-            res = self.edb.cutout(
-                signal_nets=signal_nets,
-                reference_nets=reference_nets,
-                extent_type=extent_type,
-                expansion_size=expansion_val,
-                output_aedb_path=output_path,
-                open_cutout_at_end=False
-            )
+        print(f"Creating cutout ({extent_type}, expansion factor {expansion_size})...")
+        from pyedb.workflows.utilities.cutout import Cutout
+        cutout = Cutout(self.edb)
+        cutout.signals = signal_nets
+        cutout.references = reference_nets
+        cutout.extent_type = extent_type
+        cutout.expansion_factor = expansion_size
+        cutout.smart_cutout = True
+        cutout.output_file = output_path
+        cutout.open_cutout_at_end = False
+        res = cutout.run()
         print(f"Cutout created successfully at: {output_path}")
         return output_path
 
