@@ -9,3 +9,7 @@
 /G651-19063-03_TEST22_cutout.aedtresults
 /Translator.log
 /__pycache__
+*aedt*
+*edb*
+*.brd
+*.s*p
