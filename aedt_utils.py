@@ -29,7 +29,11 @@ class EdbHelper:
                 ver_code = parts[0][2:] + parts[1]
                 env_var = f"ANSYSEM_ROOT{ver_code}"
                 dir_name = f"v{ver_code}"
-                ansys_path = rf"C:\Program Files\ANSYS Inc\{dir_name}\AnsysEM"
+                year = int(parts[0])
+                if year <= 2024:
+                    ansys_path = rf"C:\Program Files\AnsysEM\{dir_name}\Win64"
+                else:
+                    ansys_path = rf"C:\Program Files\ANSYS Inc\{dir_name}\AnsysEM"
                 os.environ[env_var] = ansys_path
                 print(f"[EDB] Set environment variable {env_var} to {ansys_path}")
         except Exception as e:

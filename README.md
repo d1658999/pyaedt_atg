@@ -14,7 +14,9 @@ It streamlines four key tasks:
 
 ### 1. Ansys Electronics Desktop (AEDT)
 The tool supports **Ansys Electronics Desktop versions from 2023 R1 (v231) up to 2025 R2 (v252)** (default: 2025 R1).
-- Default Installation Path format: `C:\Program Files\ANSYS Inc\v[ver_code]\AnsysEM` (e.g. `v251` for 2025 R1).
+- Default Installation Path formats:
+  - For **2025 R1 and later**: `C:\Program Files\ANSYS Inc\v[ver_code]\AnsysEM` (e.g. `v251` for 2025 R1).
+  - For **2024 R2 and earlier**: `C:\Program Files\AnsysEM\v[ver_code]\Win64` (e.g. `v241` for 2024 R1).
 - The application dynamically configures the corresponding environment variable (e.g. `ANSYSEM_ROOT231` for version 2023.1) based on the user-selected version in the dropdown.
 
 ### 2. Python Virtual Environment & Dependencies
@@ -132,7 +134,7 @@ When you trigger **Auto-Setup Ports & RLCs**:
 ## 🛠️ Troubleshooting & Tips
 
 - **Lock Files**: If you run into database write errors, ensure Ansys Electronics Desktop is closed for the project you are loading, as it may place file locks on the `.aedb` folder. The tool automatically attempts to clear stale lock files before configuring sweeps.
-- **Environment Variables**: If the tool cannot find AEDT, verify that `C:\Program Files\ANSYS Inc\v251\AnsysEM` exists and matches the version selected in the dropdown.
+- **Environment Variables**: If the tool cannot find AEDT, verify that the installation folder exists at `C:\Program Files\ANSYS Inc\v[ver_code]\AnsysEM` (for 2025+) or `C:\Program Files\AnsysEM\v[ver_code]\Win64` (for 2024 and earlier) matching the selected version.
 - **Log Console**: Any errors or detailed output from PyAEDT/PyEDB will be printed directly in the **Execution Log** text window at the bottom left.
 - **Long Simulations**: EM analyses can run for extended periods. The GUI stays interactive — you can scroll logs, switch tabs, or review settings while the simulation runs in the background.
 
