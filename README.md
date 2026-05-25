@@ -82,13 +82,17 @@ The GUI is divided into a **Control Panel** (left) and an **Interactive Browser*
 
 ### Step 5: Configure Sweep & Adaptive Solutions
 1. Switch to the **4. Sweep** tab.
-2. Define the **Start Frequency** (default `0.5GHz`), **Stop Frequency** (default `5GHz`), and **Frequency Step** (default `0.01GHz`).
-3. Set the **Setup Name** (default `Setup1`) and **Sweep Name** (default `Sweep1`).
-4. Choose the **Solution Freq Type**:
-   - **Broadband (Default)**: Enter `Low Frequency` (default `0.5GHz`), `High Frequency` (default `5GHz`), `Maximum Number of Passes` (default `10`), and `Maximum Delta S` (default `0.02`).
-   - **Single**: Enter `Frequency` (default `5GHz`), `Maximum Number of Passes` (default `10`), and `Maximum Delta S` (default `0.02`).
-   - **Multi-frequencies**: Use the interactive table to define each adaptive frequency entry with its own `Frequency`, `Units` (GHz/MHz/kHz/Hz), and `Max Delta S`. Click **Add** to insert a new row or **Remove** to delete the selected row. Set the shared `Maximum Number of Passes` (default `10`).
-5. Click **Apply Sweep Setup** to create/configure the settings inside AEDT.
+2. The tab is divided into two logical sections:
+   - **Adaptive Solutions (Top Group)**:
+     - Set the **Setup Name** (default `Setup1`).
+     - Choose the **Solution Freq Type**:
+       - **Broadband (Default)**: Enter `Low Frequency` (default `0.5GHz`), `High Frequency` (default `5GHz`), `Maximum Number of Passes` (default `10`), and `Maximum Delta S` (default `0.02`).
+       - **Single**: Enter `Frequency` (default `5GHz`), `Maximum Number of Passes` (default `10`), and `Maximum Delta S` (default `0.02`).
+       - **Multi-frequencies**: Use the interactive table to define each adaptive frequency entry with its own `Frequency`, `Units` (GHz/MHz/kHz/Hz), and `Max Delta S`. Click **Add** to insert a row or **Remove** to delete the selected row. Set the shared `Maximum Number of Passes` (default `10`).
+   - **Frequency Sweep Range (Bottom Group)**:
+     - Set the **Sweep Name** (default `Sweep1`).
+     - Define the **Start Frequency** (default `0.5GHz`), **Stop Frequency** (default `5GHz`), and **Frequency Step** (default `0.01GHz`).
+3. Click **Apply Sweep Setup** to create/configure the settings inside AEDT.
 
 ### Step 6: Run EM Analysis
 1. Switch to the **5. Analyze** tab.

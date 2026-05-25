@@ -62,4 +62,5 @@
 [x] Original `EXPANSION` in Ansys use proportion for unit, which is meant to expand outward default value 10 percent(so the value is 0.1), the setting in Ansys is @expansion.png. Please modify relevant items.
 [x] Expansion should use `expansion_factor` not `expansion_size` from @expansion.png. Please refer to ## Source and modify the code for cutout.
 [x] Please change to `expansion_factor` not `expansion_size` for `ConvexHull` and `Bounding` like `Conforming`. This should be same as Ansys EM default operation.
+[x] I want put the parts(adaptive_solutions.png) to above and have a section that is `adaptive_solutions` to make audience to know that is `adaptive_solutions` and the others are `Sweep`
 [x] Update the `User Guide` tab and @README.md after modification or feautures added.

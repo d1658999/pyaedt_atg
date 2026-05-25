@@ -302,15 +302,20 @@ class MainWindow(QMainWindow):
 
         # Tab 4: Sweep Config
         sweep_tab = QWidget()
-        sweep_layout = QFormLayout(sweep_tab)
+        sweep_main_layout = QVBoxLayout(sweep_tab)
+        sweep_main_layout.setContentsMargins(6, 6, 6, 6)
+        sweep_main_layout.setSpacing(10)
         
-        self.start_freq_edit = QLineEdit("0.5GHz")
-        self.stop_freq_edit = QLineEdit("5GHz")
-        self.step_freq_edit = QLineEdit("0.01GHz")
+        # 4a. Adaptive Solutions Group Box
+        adaptive_group = QGroupBox("Adaptive Solutions")
+        adaptive_form = QFormLayout(adaptive_group)
+        
         self.setup_name_edit = QLineEdit("Setup1")
-        self.sweep_name_edit = QLineEdit("Sweep1")
         self.solution_type_combo = QComboBox()
         self.solution_type_combo.addItems(["Broadband", "Single", "Multi-frequencies"])
+        
+        adaptive_form.addRow("Setup Name:", self.setup_name_edit)
+        adaptive_form.addRow("Solution Freq Type:", self.solution_type_combo)
         
         # --- Adaptive Solutions: Broadband group ---
         self.broadband_group = QWidget()
@@ -383,24 +388,39 @@ class MainWindow(QMainWindow):
         
         self.solution_type_combo.currentTextChanged.connect(self.on_solution_type_changed)
         
+        # Add sub-groups to Adaptive Solutions layout
+        adaptive_form.addRow(self.broadband_group)
+        adaptive_form.addRow(self.single_group)
+        adaptive_form.addRow(self.multi_group)
+        
+        sweep_main_layout.addWidget(adaptive_group)
+        
+        # 4b. Frequency Sweep Group Box
+        sweep_group = QGroupBox("Frequency Sweep Range")
+        sweep_range_form = QFormLayout(sweep_group)
+        
+        self.sweep_name_edit = QLineEdit("Sweep1")
+        self.start_freq_edit = QLineEdit("0.5GHz")
+        self.stop_freq_edit = QLineEdit("5GHz")
+        self.step_freq_edit = QLineEdit("0.01GHz")
+        
+        sweep_range_form.addRow("Sweep Name:", self.sweep_name_edit)
+        sweep_range_form.addRow("Start Frequency:", self.start_freq_edit)
+        sweep_range_form.addRow("Stop Frequency:", self.stop_freq_edit)
+        sweep_range_form.addRow("Frequency Step:", self.step_freq_edit)
+        
+        sweep_main_layout.addWidget(sweep_group)
+        
         self.non_graphical_check = QCheckBox("Run Non-Graphical Mode")
         self.non_graphical_check.setChecked(True)
         
         self.sweep_btn = QPushButton("Apply Sweep Setup")
         self.sweep_btn.clicked.connect(self.run_sweep_setup)
         self.sweep_btn.setEnabled(False)
-
-        sweep_layout.addRow("Start Frequency:", self.start_freq_edit)
-        sweep_layout.addRow("Stop Frequency:", self.stop_freq_edit)
-        sweep_layout.addRow("Frequency Step:", self.step_freq_edit)
-        sweep_layout.addRow("Setup Name:", self.setup_name_edit)
-        sweep_layout.addRow("Sweep Name:", self.sweep_name_edit)
-        sweep_layout.addRow("Solution Freq Type:", self.solution_type_combo)
-        sweep_layout.addRow(self.broadband_group)
-        sweep_layout.addRow(self.single_group)
-        sweep_layout.addRow(self.multi_group)
-        sweep_layout.addRow(self.non_graphical_check)
-        sweep_layout.addRow(self.sweep_btn)
+        
+        sweep_main_layout.addWidget(self.non_graphical_check)
+        sweep_main_layout.addWidget(self.sweep_btn)
+        sweep_main_layout.addStretch()
         
         # Call toggle to initialize correct visibility
         self.on_solution_type_changed(self.solution_type_combo.currentText())
@@ -539,10 +559,9 @@ class MainWindow(QMainWindow):
             &bull; Selects the <b>best GND reference pin</b> using a priority order: <b>same component</b> first (for short, clean port paths), then same placement layer, then global fallback.<br/>
             &bull; Deactivates all RLC components on the signal path and replaces them with <b>component ports</b>.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 5</td>
-            <td><b>Sweep &amp; Adaptive Solutions</b> &mdash; In the <i>4. Sweep</i> tab, configure frequency sweep range and choose one of three adaptive solution types:<br/><br/>
-            <b>Broadband</b> (default): Enter low frequency (default <code>0.5 GHz</code>) and high frequency (default <code>5 GHz</code>), along with max passes and max delta S.<br/>
-            <b>Single</b>: Specify a single adaptive frequency, max passes, and max delta S.<br/>
-            <b>Multi-frequencies</b>: Use the table to add/remove multiple adaptive frequencies, each with its own max delta S value, plus a shared max passes setting.<br/><br/>
+            <td><b>Sweep &amp; Adaptive Solutions</b> &mdash; In the <i>4. Sweep</i> tab, the settings are grouped into two sections:<br/><br/>
+            &bull; <b>Adaptive Solutions (Top Section):</b> Set the adaptive setup name, choose the solution frequency type (<b>Broadband</b>, <b>Single</b>, or <b>Multi-frequencies</b>), and configure the corresponding adaptive settings (adaptive frequencies, maximum passes, and maximum delta S).<br/>
+            &bull; <b>Frequency Sweep Range (Bottom Section):</b> Define the sweep name and the sweep frequency range (Start Frequency, Stop Frequency, and Frequency Step).<br/><br/>
             Click <i>Apply Sweep Setup</i> to configure the HFSS 3D Layout simulation.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 6</td>
             <td><b>Run EM Analysis</b> &mdash; In the <i>5. Analyze</i> tab:<br/><br/>
