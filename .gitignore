@@ -13,3 +13,4 @@
 *edb*
 *.brd
 *.s*p
+!PyAEDT_Config_Tool.spec

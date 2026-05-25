@@ -135,3 +135,17 @@ When you trigger **Auto-Setup Ports & RLCs**:
 - **Environment Variables**: If the tool cannot find AEDT, verify that `C:\Program Files\ANSYS Inc\v251\AnsysEM` exists and matches the version selected in the dropdown.
 - **Log Console**: Any errors or detailed output from PyAEDT/PyEDB will be printed directly in the **Execution Log** text window at the bottom left.
 - **Long Simulations**: EM analyses can run for extended periods. The GUI stays interactive — you can scroll logs, switch tabs, or review settings while the simulation runs in the background.
+
+---
+
+## 📦 Packaging Standalone Executable (.exe)
+
+You can compile this Python tool into a standalone Windows executable (`.exe`) so that it can be run directly on any machine without needing Python installed.
+
+1. Double-click the **`build_exe.bat`** file in the project root folder.
+2. The batch script will automatically:
+   - Activate the virtual environment (`.venv`).
+   - Check if `pyinstaller` is installed (and install it via pip if missing).
+   - Package the app into a single file with no console window.
+3. Once completed, the standalone executable will be saved in the **`dist`** directory as:
+   `dist\PyAEDT_Config_Tool.exe`
