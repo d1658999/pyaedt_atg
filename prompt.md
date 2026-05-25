@@ -65,4 +65,44 @@
 [x] I want put the parts(adaptive_solutions.png) to above and have a section that is `adaptive_solutions` to make audience to know that is `adaptive_solutions` and the others are `Sweep`
 [x] Add Ansys version since 2023.1 to latest version at ## Source
 [x] Build a batch file, let me can directly use this transform tool to build one exe file from python file fro some code or feautures updated in the future.
+[x] I found ansysedt.exe path or relevant ansys files are depend on the version of ansys, after 2025 the C:\Program Files\ANSYS Inc\{version}\AnsysEM. If before 2024(including 2024), the path is C:\Program Files\AnsysEM\{version}\Win64. The variable environment for example like @version_path.png. Please fix them according to different version
+[x] I got some error when I use older version before 2024(including 2024) like 2021.1 for Apply Sweep setup `[SWEEP] Starting frequency sweep configuration...
+Launching HFSS 3D Layout (non-graphical=True) to configure frequency sweep...
+Edb connection closed.
+C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\desktop.py:2382: UserWarning: PyAEDT has limited capabilities when used with an AEDT version earlier than 2022 R2.
+                Update your AEDT installation to 2022 R2 or later.
+  warnings.warn(
+Error configuring sweep via PyAEDT:
+Traceback (most recent call last):
+File "c:\Users\pricewu\Documents\pyaedt_atg\aedt_utils.py", line 288, in setup_broadband_sweep
+    h3d = Hfss3dLayout(project=self.edb_path, version=self.version, non_graphical=non_graphical)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\hfss3dlayout.py", line 173, in __init__
+    FieldAnalysis3DLayout.__init__(
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\application\analysis_3d_layout.py", line 129, in __init__
+    Analysis.__init__(
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\application\analysis.py", line 145, in __init__
+    Design.__init__(
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\application\design.py", line 207, in __init__
+    self._desktop_class = self.__init_desktop_from_design(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\application\design.py", line 4399, in __init_desktop_from_design
+    return Desktop(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\desktop.py", line 749, in __init__
+    self.check_starting_mode()
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\generic\general_methods.py", line 256, in wrapper
+    return raise_exception_or_return_false(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\generic\general_methods.py", line 218, in raise_exception_or_return_false
+    raise e
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\generic\general_methods.py", line 231, in wrapper
+    out = user_function(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\pricewu\Documents\pyaedt_atg\.venv\Lib\site-packages\ansys\aedt\core\desktop.py", line 949, in check_starting_mode
+    raise Exception("Unsupported AEDT version")
+Exception: Unsupported AEDT version
+Opening EDB folder C:/Users/pricewu/Documents/pyaedt_atg/G651-15140-06_FL5_CLB_2_cutout.aedb...
+[SWEEP] Failed to configure sweep via PyAEDT. Please check logs.`
+please fix it, and tell me what happended
 [x] Update the `User Guide` tab and @README.md after modification or feautures added.

@@ -265,6 +265,20 @@ class EdbHelper:
         if not self.edb_path:
             raise RuntimeError("EDB path is not set.")
             
+        # Check Ansys AEDT version compatibility (PyAEDT requires 2022 R2 / 2022.2 or later)
+        try:
+            parts = self.version.split(".")
+            if len(parts) >= 1:
+                year = int(parts[0])
+                release = int(parts[1]) if len(parts) >= 2 else 0
+                version_val = float(f"{year}.{release}")
+                if version_val < 2022.2:
+                    print(f"\n[ERROR] Ansys Electronics Desktop version {self.version} is not supported.")
+                    print("PyAEDT desktop automation (sweep setup, analysis, touchstone export) requires version 2022 R2 (2022.2) or later.")
+                    return False
+        except Exception:
+            pass
+
         print(f"Launching HFSS 3D Layout (non-graphical={non_graphical}) to configure frequency sweep...")
         
         # Close Edb connection first to release file lock
@@ -560,6 +574,20 @@ class EdbHelper:
         Returns:
             Path to the exported Touchstone file, or None on failure.
         """
+        # Check Ansys AEDT version compatibility (PyAEDT requires 2022 R2 / 2022.2 or later)
+        try:
+            parts = self.version.split(".")
+            if len(parts) >= 1:
+                year = int(parts[0])
+                release = int(parts[1]) if len(parts) >= 2 else 0
+                version_val = float(f"{year}.{release}")
+                if version_val < 2022.2:
+                    print(f"\n[ERROR] Ansys Electronics Desktop version {self.version} is not supported.")
+                    print("PyAEDT desktop automation (sweep setup, analysis, touchstone export) requires version 2022 R2 (2022.2) or later.")
+                    return None
+        except Exception:
+            pass
+
         aedt_file = self.edb_path.replace(".aedb", ".aedt")
         if not os.path.exists(aedt_file):
             print(f"AEDT project file not found: {aedt_file}")
@@ -654,6 +682,20 @@ class EdbHelper:
         Returns:
             dict with 'success' (bool) and optionally 'touchstone_path' (str).
         """
+        # Check Ansys AEDT version compatibility (PyAEDT requires 2022 R2 / 2022.2 or later)
+        try:
+            parts = self.version.split(".")
+            if len(parts) >= 1:
+                year = int(parts[0])
+                release = int(parts[1]) if len(parts) >= 2 else 0
+                version_val = float(f"{year}.{release}")
+                if version_val < 2022.2:
+                    print(f"\n[ERROR] Ansys Electronics Desktop version {self.version} is not supported.")
+                    print("PyAEDT desktop automation (sweep setup, analysis, touchstone export) requires version 2022 R2 (2022.2) or later.")
+                    return {'success': False, 'touchstone_path': None}
+        except Exception:
+            pass
+
         if not self.edb_path:
             raise RuntimeError("EDB path is not set.")
         

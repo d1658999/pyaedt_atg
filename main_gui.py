@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
         file_row.addWidget(self.browse_btn)
         
         self.version_combo = QComboBox()
-        self.version_combo.addItems(["2026.2", "2026.1", "2025.4", "2025.3", "2025.2", "2025.1", "2024.4","2024.3", "2024.2", "2024.1", "2023.4","2023.3","2023.2", "2023.1", "2022.4","2022.3","2022.2", "2022.1"])
+        self.version_combo.addItems(["2026.2", "2026.1", "2025.4", "2025.3", "2025.2", "2025.1", "2024.4","2024.3", "2024.2", "2024.1", "2023.4","2023.3","2023.2", "2023.1", "2022.4","2022.3","2022.2"])
         self.version_combo.setCurrentText("2025.1")
         
         self.load_btn = QPushButton("Load Board/Project")

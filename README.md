@@ -13,7 +13,9 @@ It streamlines four key tasks:
 ## 🛠️ Prerequisites & System Setup
 
 ### 1. Ansys Electronics Desktop (AEDT)
-The tool supports **Ansys Electronics Desktop versions from 2023 R1 (v231) up to 2025 R2 (v252)** (default: 2025 R1).
+The tool supports **Ansys Electronics Desktop versions from 2022 R2 (v222) up to 2025 R2 (v252)** (default: 2025 R1).
+> [!IMPORTANT]
+> **PyAEDT Desktop Automation Requirement**: Ansys Electronics Desktop version **2022 R2 (v222) or later** is required for sweep configuration, simulation analysis, and Touchstone export. Older versions (e.g., 2021 R1/R2) are not supported by the underlying PyAEDT automation interface and will trigger version exception errors.
 - Default Installation Path formats:
   - For **2025 R1 and later**: `C:\Program Files\ANSYS Inc\v[ver_code]\AnsysEM` (e.g. `v251` for 2025 R1).
   - For **2024 R2 and earlier**: `C:\Program Files\AnsysEM\v[ver_code]\Win64` (e.g. `v241` for 2024 R1).
