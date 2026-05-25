@@ -250,13 +250,14 @@ class MainWindow(QMainWindow):
 
         # 2b. Layout Cutout Settings
         cutout_group = QGroupBox("Layout Cutout Settings")
-        cutout_layout = QFormLayout(cutout_group)
+        self.cutout_layout = QFormLayout(cutout_group)
         
         self.extent_type_combo = QComboBox()
         self.extent_type_combo.addItems(["Conforming", "ConvexHull", "Bounding"])
+        self.extent_type_combo.currentTextChanged.connect(self.on_cutout_type_changed)
         
-        self.expansion_edit = QLineEdit("0.05")
-        self.expansion_edit.setPlaceholderText("Expansion size in millimeters (mm)...")
+        self.expansion_edit = QLineEdit("0.1")
+        self.expansion_edit.setPlaceholderText("Expansion factor (e.g. 0.1 for 10%)...")
         
         self.output_path_edit = QLineEdit()
         self.output_path_edit.setPlaceholderText("Defaults to [filename]_cutout.aedb")
@@ -265,10 +266,10 @@ class MainWindow(QMainWindow):
         self.cutout_btn.clicked.connect(self.run_cutout)
         self.cutout_btn.setEnabled(False)
 
-        cutout_layout.addRow("Cutout Type:", self.extent_type_combo)
-        cutout_layout.addRow("Expansion Size (mm):", self.expansion_edit)
-        cutout_layout.addRow("Output Path:", self.output_path_edit)
-        cutout_layout.addRow(self.cutout_btn)
+        self.cutout_layout.addRow("Cutout Type:", self.extent_type_combo)
+        self.cutout_layout.addRow("Expansion Factor:", self.expansion_edit)
+        self.cutout_layout.addRow("Output Path:", self.output_path_edit)
+        self.cutout_layout.addRow(self.cutout_btn)
         cutout_tab_layout.addWidget(cutout_group)
 
         # 2c. Stackup Layers Viewer
@@ -530,7 +531,7 @@ class MainWindow(QMainWindow):
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 3</td>
             <td><b>Layout Cutout &amp; Stackup</b> &mdash; In the <i>2. Cutout</i> tab:<br/><br/>
             &bull; <b>Import Stackup (Optional):</b> Click <i>Browse</i> to select a stackup <code>.xml</code> file and click <i>Import Stackup</i>. The tool automatically parses and registers all materials defined in the XML (such as <code>DS-8502SQ</code>, <code>SOLDERMASK</code>, <code>copper - 5E7</code>) into the EDB database, then loads the stackup layers. The <b>Stackup Layers Viewer</b> below will update to display all layers confirming successful import.<br/>
-            &bull; <b>Layout Cutout:</b> Choose the cutout type (default: <b>Conforming</b>), set the expansion margin (default: <b>0.05 mm</b>), and click <i>Run Layout Cutout</i>. A reduced EDB is created and you can auto-load it.</td></tr>
+            &bull; <b>Layout Cutout:</b> Choose the cutout type (default: <b>Conforming</b>), set the expansion factor (default: <b>0.1</b> for Conforming cutout, or physical millimeters, e.g. <b>2.0</b> mm, for ConvexHull/Bounding), and click <i>Run Layout Cutout</i>. A reduced EDB is created and you can auto-load it.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 4</td>
             <td><b>Auto-Setup Ports &amp; RLCs</b> &mdash; In the <i>3. Ports</i> tab, specify the ground reference net (default: <code>GND</code>) and click <i>Auto-Setup Ports &amp; RLCs</i>.<br/><br/>
             The tool automatically:<br/>
@@ -905,6 +906,19 @@ class MainWindow(QMainWindow):
         for row in range(self.comp_table.rowCount()):
             item = self.comp_table.item(row, 0)
             self.comp_table.setRowHidden(row, search_text.lower() not in item.text().lower())
+
+    def on_cutout_type_changed(self, text):
+        label = self.cutout_layout.labelForField(self.expansion_edit)
+        if text == "Conforming":
+            self.expansion_edit.setText("0.1")
+            self.expansion_edit.setPlaceholderText("Expansion factor (e.g. 0.1 for 10%)...")
+            if label and isinstance(label, QLabel):
+                label.setText("Expansion Factor:")
+        else:
+            self.expansion_edit.setText("2.0")
+            self.expansion_edit.setPlaceholderText("Expansion size in millimeters (mm)...")
+            if label and isinstance(label, QLabel):
+                label.setText("Expansion Size (mm):")
 
     def run_cutout(self):
         selected_nets = [item.text() for item in self.net_list_widget.selectedItems()]
