@@ -63,4 +63,5 @@
 [x] Expansion should use `expansion_factor` not `expansion_size` from @expansion.png. Please refer to ## Source and modify the code for cutout.
 [x] Please change to `expansion_factor` not `expansion_size` for `ConvexHull` and `Bounding` like `Conforming`. This should be same as Ansys EM default operation.
 [x] I want put the parts(adaptive_solutions.png) to above and have a section that is `adaptive_solutions` to make audience to know that is `adaptive_solutions` and the others are `Sweep`
-[x] Update the `User Guide` tab and @README.md after modification or feautures added.
+[] Add Ansys version since 2023.1 to latest version at ## Source
+[] Update the `User Guide` tab and @README.md after modification or feautures added.

@@ -216,7 +216,8 @@ class MainWindow(QMainWindow):
         file_row.addWidget(self.browse_btn)
         
         self.version_combo = QComboBox()
-        self.version_combo.addItems(["2025.1", "2024.2", "2023.2"])
+        self.version_combo.addItems(["2026.2", "2026.1", "2025.4", "2025.3", "2025.2", "2025.1", "2024.4","2024.3", "2024.2", "2024.1", "2023.4","2023.3","2023.2", "2023.1"])
+        self.version_combo.setCurrentText("2025.1")
         
         self.load_btn = QPushButton("Load Board/Project")
         self.load_btn.clicked.connect(self.load_project)
@@ -576,7 +577,7 @@ class MainWindow(QMainWindow):
         <ul>
             <li>Close Ansys Electronics Desktop before loading a project to avoid file lock issues.</li>
             <li>Check the <b>Execution Log</b> panel at the bottom left for detailed progress and error messages.</li>
-            <li>The tool is configured for <b>Ansys Electronics Desktop 2025 R1 (v251)</b> by default.</li>
+            <li>The tool is configured for <b>Ansys Electronics Desktop 2025 R1 (v251)</b> by default, and supports versions from 2023 R1 (v231) up to 2025 R2 (v252).</li>
             <li>EM simulations can take minutes to hours. The GUI stays interactive throughout.</li>
         </ul>
         """)

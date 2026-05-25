@@ -19,8 +19,21 @@ class EdbHelper:
         self.edb = None
         self.temp_dir = None
         
-        # Setup environment variable for Ansys
+        # Setup environment variable for Ansys (2025.1 default)
         os.environ["ANSYSEM_ROOT251"] = r"C:\Program Files\ANSYS Inc\v251\AnsysEM"
+        
+        # Dynamically set environment variable for other selected versions
+        try:
+            parts = self.version.split(".")
+            if len(parts) == 2 and len(parts[0]) == 4:
+                ver_code = parts[0][2:] + parts[1]
+                env_var = f"ANSYSEM_ROOT{ver_code}"
+                dir_name = f"v{ver_code}"
+                ansys_path = rf"C:\Program Files\ANSYS Inc\{dir_name}\AnsysEM"
+                os.environ[env_var] = ansys_path
+                print(f"[EDB] Set environment variable {env_var} to {ansys_path}")
+        except Exception as e:
+            print(f"[EDB] Error setting version environment variables: {e}")
         
         self.initialize_edb()
 

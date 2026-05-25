@@ -13,9 +13,9 @@ It streamlines four key tasks:
 ## 🛠️ Prerequisites & System Setup
 
 ### 1. Ansys Electronics Desktop (AEDT)
-The tool is configured to run with **Ansys Electronics Desktop 2025 R1 (v251)**.
-- Default Installation Path: `C:\Program Files\ANSYS Inc\v251\AnsysEM`
-- The application automatically configures the environment variable `ANSYSEM_ROOT251` to point to this directory.
+The tool supports **Ansys Electronics Desktop versions from 2023 R1 (v231) up to 2025 R2 (v252)** (default: 2025 R1).
+- Default Installation Path format: `C:\Program Files\ANSYS Inc\v[ver_code]\AnsysEM` (e.g. `v251` for 2025 R1).
+- The application dynamically configures the corresponding environment variable (e.g. `ANSYSEM_ROOT231` for version 2023.1) based on the user-selected version in the dropdown.
 
 ### 2. Python Virtual Environment & Dependencies
 Dependencies are installed inside the virtual environment (`.venv`). Make sure the following libraries are installed:
