@@ -65,7 +65,7 @@ The GUI is divided into a **Control Panel** (left) and an **Interactive Browser*
 
 **Layout Cutout**:
 - Set the **Cutout Type** (default is **Conforming**; options: `Conforming`, `ConvexHull`, `Bounding`).
-- Set the **Expansion Size** in meters (default is **0.05** meters).
+- Set the **Expansion Size** in millimeters (default is **0.05** mm).
 - Verify the output folder path (defaults to `[original_path]_cutout.aedb`).
 - Click **Run Layout Cutout**.
 - When complete, a prompt will ask if you want to automatically load this new cutout project. Click **Yes** to load it and configure ports.

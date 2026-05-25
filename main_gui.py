@@ -256,7 +256,7 @@ class MainWindow(QMainWindow):
         self.extent_type_combo.addItems(["Conforming", "ConvexHull", "Bounding"])
         
         self.expansion_edit = QLineEdit("0.05")
-        self.expansion_edit.setPlaceholderText("Expansion size in meters...")
+        self.expansion_edit.setPlaceholderText("Expansion size in millimeters (mm)...")
         
         self.output_path_edit = QLineEdit()
         self.output_path_edit.setPlaceholderText("Defaults to [filename]_cutout.aedb")
@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
         self.cutout_btn.setEnabled(False)
 
         cutout_layout.addRow("Cutout Type:", self.extent_type_combo)
-        cutout_layout.addRow("Expansion Size (m):", self.expansion_edit)
+        cutout_layout.addRow("Expansion Size (mm):", self.expansion_edit)
         cutout_layout.addRow("Output Path:", self.output_path_edit)
         cutout_layout.addRow(self.cutout_btn)
         cutout_tab_layout.addWidget(cutout_group)
@@ -530,7 +530,7 @@ class MainWindow(QMainWindow):
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 3</td>
             <td><b>Layout Cutout &amp; Stackup</b> &mdash; In the <i>2. Cutout</i> tab:<br/><br/>
             &bull; <b>Import Stackup (Optional):</b> Click <i>Browse</i> to select a stackup <code>.xml</code> file and click <i>Import Stackup</i>. The tool automatically parses and registers all materials defined in the XML (such as <code>DS-8502SQ</code>, <code>SOLDERMASK</code>, <code>copper - 5E7</code>) into the EDB database, then loads the stackup layers. The <b>Stackup Layers Viewer</b> below will update to display all layers confirming successful import.<br/>
-            &bull; <b>Layout Cutout:</b> Choose the cutout type (default: <b>Conforming</b>), set the expansion margin (default: <b>0.05 m</b>), and click <i>Run Layout Cutout</i>. A reduced EDB is created and you can auto-load it.</td></tr>
+            &bull; <b>Layout Cutout:</b> Choose the cutout type (default: <b>Conforming</b>), set the expansion margin (default: <b>0.05 mm</b>), and click <i>Run Layout Cutout</i>. A reduced EDB is created and you can auto-load it.</td></tr>
         <tr><td style="color:#4cc9f0; font-weight:bold; vertical-align:top;">Step 4</td>
             <td><b>Auto-Setup Ports &amp; RLCs</b> &mdash; In the <i>3. Ports</i> tab, specify the ground reference net (default: <code>GND</code>) and click <i>Auto-Setup Ports &amp; RLCs</i>.<br/><br/>
             The tool automatically:<br/>

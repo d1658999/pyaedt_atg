@@ -57,4 +57,6 @@
 [x] After finishing the EM analysis, export Matrix Data of Touchstone(.sNp) automatically
 [x] After Cutout with import @ASK5_CLB_Cu_5E7_DIEL_FILL.xml, Something is off becasue the part of material is empty like @stackup1.png. I try to import it manually, the material is right like @stackup2.png. Please fix it.
 [x] Automatically detect how many port for the simulation, so it can use the right snp port file such as .s10p s16p for 10 and 16 ports respectively, not hard extended file name .sNp file. 
+[x] The unit of `EXPANSION SIZE` is (mm), not (m). Need to change the input of algorithm is mm not m.
+[x] When I import aedt file, I cannot read or get all Nets. But if I import brd file, I canot get all Nets. Please fix it, I want both can get all Nets from file no matter what it is brd file or adet file.
 [x] Update the `User Guide` tab and @README.md after modification or feautures added.

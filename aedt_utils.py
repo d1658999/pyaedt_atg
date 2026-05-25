@@ -40,11 +40,10 @@ class EdbHelper:
             print(f"Opening EDB folder {self.edb_path}...")
             self.edb = Edb(edbpath=self.file_path, version=self.version)
         elif ext == ".aedt":
-            # For AEDT projects, EDB is usually inside project.aedt or we can open via pyaedt.
-            # We open the AEDT file using Edb class which can read EDB from AEDT designs.
-            self.edb_path = self.file_path
-            print(f"Opening EDB from AEDT project {self.file_path}...")
-            self.edb = Edb(edbpath=self.file_path, version=self.version)
+            # For AEDT projects, EDB is stored in the matching .aedb folder in the same directory.
+            self.edb_path = self.file_path.replace(".aedt", ".aedb")
+            print(f"Opening EDB folder {self.edb_path} matching AEDT project {self.file_path}...")
+            self.edb = Edb(edbpath=self.edb_path, version=self.version)
         else:
             raise ValueError(f"Unsupported file format: {ext}. Must be .brd, .aedb, or .aedt.")
 
@@ -75,8 +74,16 @@ class EdbHelper:
             })
         return sorted(comp_list, key=lambda x: x['name'])
 
-    def create_cutout(self, signal_nets, reference_nets, extent_type="ConvexHull", expansion_size=0.002, output_path=None):
-        """Create a layout cutout and save to a new AEDB folder."""
+    def create_cutout(self, signal_nets, reference_nets, extent_type="ConvexHull", expansion_size=0.05, output_path=None):
+        """Create a layout cutout and save to a new AEDB folder.
+        
+        Args:
+            signal_nets: List of signal net names.
+            reference_nets: List of reference net names.
+            extent_type: Cutout type (Conforming, ConvexHull, Bounding).
+            expansion_size: Expansion size in millimeters (default: 0.05 mm).
+            output_path: Path to save the cutout AEDB.
+        """
         if not self.edb:
             raise RuntimeError("EDB is not loaded.")
         
@@ -86,13 +93,16 @@ class EdbHelper:
         if os.path.exists(output_path):
             shutil.rmtree(output_path, ignore_errors=True)
             
-        print(f"Creating cutout ({extent_type}, {expansion_size*1000}mm margin)...")
+        print(f"Creating cutout ({extent_type}, {expansion_size}mm margin)...")
+        # Convert expansion_size from mm to meters for PyEDB
+        expansion_size_meters = expansion_size * 0.001
+        
         # Run pyedb cutout
         res = self.edb.cutout(
             signal_nets=signal_nets,
             reference_nets=reference_nets,
             extent_type=extent_type,
-            expansion_size=expansion_size,
+            expansion_size=expansion_size_meters,
             output_aedb_path=output_path,
             open_cutout_at_end=False
         )
