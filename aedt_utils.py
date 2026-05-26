@@ -43,26 +43,42 @@ class EdbHelper:
 
     def initialize_edb(self):
         """Initialize the EDB connection. Translates BRD files if necessary."""
+        import signal
+        
+        # Save original signal registration function
+        orig_signal = signal.signal
+        
+        # Temporary no-op function for signal registration in background thread
+        def dummy_signal(sig, handler):
+            return None
+            
         ext = os.path.splitext(self.file_path)[1].lower()
-        if ext == ".brd":
-            # Translate BRD to AEDB
-            self.edb_path = self.file_path.replace(".brd", "_translated.aedb")
-            if os.path.exists(self.edb_path):
-                shutil.rmtree(self.edb_path, ignore_errors=True)
-            print(f"Translating {self.file_path} to EDB folder {self.edb_path}...")
-            self.edb = Edb(edbpath=self.file_path, version=self.version)
-            self.edb_path = self.edb.edbpath
-        elif ext == ".aedb":
-            self.edb_path = self.file_path
-            print(f"Opening EDB folder {self.edb_path}...")
-            self.edb = Edb(edbpath=self.file_path, version=self.version)
-        elif ext == ".aedt":
-            # For AEDT projects, EDB is stored in the matching .aedb folder in the same directory.
-            self.edb_path = self.file_path.replace(".aedt", ".aedb")
-            print(f"Opening EDB folder {self.edb_path} matching AEDT project {self.file_path}...")
-            self.edb = Edb(edbpath=self.edb_path, version=self.version)
-        else:
-            raise ValueError(f"Unsupported file format: {ext}. Must be .brd, .aedb, or .aedt.")
+        try:
+            # Temporarily bypass signal.signal to prevent ValueError in QThread
+            signal.signal = dummy_signal
+            
+            if ext == ".brd":
+                # Translate BRD to AEDB
+                self.edb_path = self.file_path.replace(".brd", "_translated.aedb")
+                if os.path.exists(self.edb_path):
+                    shutil.rmtree(self.edb_path, ignore_errors=True)
+                print(f"Translating {self.file_path} to EDB folder {self.edb_path}...")
+                self.edb = Edb(edbpath=self.file_path, version=self.version)
+                self.edb_path = self.edb.edbpath
+            elif ext == ".aedb":
+                self.edb_path = self.file_path
+                print(f"Opening EDB folder {self.edb_path}...")
+                self.edb = Edb(edbpath=self.file_path, version=self.version)
+            elif ext == ".aedt":
+                # For AEDT projects, EDB is stored in the matching .aedb folder in the same directory.
+                self.edb_path = self.file_path.replace(".aedt", ".aedb")
+                print(f"Opening EDB folder {self.edb_path} matching AEDT project {self.file_path}...")
+                self.edb = Edb(edbpath=self.edb_path, version=self.version)
+            else:
+                raise ValueError(f"Unsupported file format: {ext}. Must be .brd, .aedb, or .aedt.")
+        finally:
+            # Restore original signal handler
+            signal.signal = orig_signal
 
     def get_nets(self):
         """Get all net names in the design."""
