@@ -1,12 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import copy_metadata
+
+datas = []
+binaries = []
+hiddenimports = []
+datas += copy_metadata('ansys-tools-common')
+datas += copy_metadata('ansys-api-edb')
+datas += copy_metadata('ansys-edb-core')
+datas += copy_metadata('pyedb')
+datas += copy_metadata('pyaedt')
+tmp_ret = collect_all('ansys.api.edb')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['main_gui.py'],
     pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=[],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
